@@ -417,8 +417,47 @@
   .task.pri-High { border-left-color: var(--high-bg); }
   .task.pri-Medium { border-left-color: var(--med-bg); }
   .task.pri-Low { border-left-color: var(--low-bg); }
-  .task.done { opacity: 0.6; background: var(--bg); }
-  .task.done .task-title { text-decoration: line-through; }
+  /* ==== 已完成任務：壓縮成單行，不佔版面 ==== */
+  .task.done {
+    opacity: 0.55;
+    background: var(--bg);
+    padding: 6px 12px;
+    grid-template-columns: 1fr auto auto;
+    gap: 4px 12px;
+  }
+  .task.done:hover { opacity: 0.85; }
+  .task.done .task-head { gap: 6px; flex-wrap: nowrap; overflow: hidden; }
+  .task.done .task-title {
+    text-decoration: line-through;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .task.done .task-id { font-size: 10px; padding: 1px 5px; }
+  .task.done .badge { font-size: 10px; padding: 1px 6px; }
+  .task.done .pri-badge,
+  .task.done .badge.cat-AP,
+  .task.done .badge.cat-EXAM,
+  .task.done .badge.cat-AWARD,
+  .task.done .badge.cat-PTC,
+  .task.done .badge.cat-ONBOARD,
+  .task.done .badge.cat-GRADE,
+  .task.done .badge.cat-MISC { display: none; }  /* 完成後淡化非關鍵 badge */
+  .task.done .task-body { display: none; }       /* 完成後收合詳情 */
+  .task.done .deadline-wrap {
+    padding-left: 8px;
+    border-left: none;
+    min-width: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .task.done .deadline-date { font-size: 11px; color: var(--muted); }
+  .task.done .days-left { font-size: 11px; font-weight: 500; color: var(--muted); }
+  .task.done .days-left-label { display: none; }
+  .task.done .task-btn { padding: 2px 8px; font-size: 10px; }
   .task.sub { margin-left: 28px; position: relative; }
   .task.sub::before {
     content: "";
@@ -2675,8 +2714,29 @@ function renderWorkload() {
 
 /* ========================= GANTT VIEW ========================= */
 function renderGanttView() {
-  const tasks = State.tasks.filter(t => t.created && t.deadline).slice();
-  tasks.sort((a, b) => (a.created || "").localeCompare(b.created || ""));
+  // 甘特圖只顯示未完成任務（完成的移出時間軸視野，聚焦在「剩下要做什麼」）
+  const all = State.tasks
+    .filter(t => t.created && t.deadline && t.status !== "已完成")
+    .slice();
+
+  // 父子分組排序：父任務後緊跟其子任務（子按建立日排）
+  const byId = new Map(all.map(t => [t.id, t]));
+  const topLevel = all.filter(t => !t.parentId || !byId.has(t.parentId));
+  const childrenOf = new Map();
+  all.forEach(t => {
+    if (t.parentId && byId.has(t.parentId)) {
+      if (!childrenOf.has(t.parentId)) childrenOf.set(t.parentId, []);
+      childrenOf.get(t.parentId).push(t);
+    }
+  });
+  topLevel.sort((a, b) => (a.created || "").localeCompare(b.created || ""));
+  const tasks = [];
+  topLevel.forEach(p => {
+    tasks.push(p);
+    const kids = (childrenOf.get(p.id) || []).slice()
+      .sort((a, b) => (a.created || "").localeCompare(b.created || ""));
+    kids.forEach(k => tasks.push(k));
+  });
 
   if (tasks.length === 0) {
     document.getElementById("gantt-container").innerHTML = `<div class="empty">無可顯示任務（需要建立日與截止日）</div>`;
@@ -2735,10 +2795,12 @@ function renderGanttView() {
     const width = Math.max(zoom * 0.5, (daysBetween(t.created, t.deadline) + 1) * zoom);
     const color = PRI_COLORS[t.priority] || "#6b7280";
     const doneCls = t.status === "已完成" ? " done" : "";
+    const isChild = !!(t.parentId && byId.has(t.parentId));
+    const indent = isChild ? '<span style="display:inline-block; width:12px; color:var(--muted-soft);">└</span>' : "";
     html += `
       <div class="gantt-row" style="${rowTemplate}">
-        <div class="gantt-label" title="${escapeHtml(t.task)}">
-          <span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:${CAT_COLORS[t.category]}; margin-right:6px;"></span>
+        <div class="gantt-label" title="${escapeHtml(t.task)}" style="padding-left:${isChild ? 16 : 0}px;">
+          ${indent}<span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:${CAT_COLORS[t.category]}; margin-right:6px;"></span>
           ${escapeHtml(t.id)} · ${escapeHtml(t.task)}
         </div>
         <div class="gantt-track" style="position:relative;">

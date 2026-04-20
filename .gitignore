@@ -24,6 +24,13 @@ Thumbs.db
 # ===== Claude Code 本機設定 =====
 .claude/
 
+# ===== 個人使用指引（含 Gist ID / 敏感操作） =====
+HOW_TO_USE.md
+
+# ===== 任務管理 session 的 CLAUDE.md 子資料夾（含 Gist ID）=====
+Task Management/
+TYAS-Tasks/
+
 # ===== 暫存 =====
 *.log
 *.tmp
