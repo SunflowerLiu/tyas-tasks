@@ -1,0 +1,29 @@
+# ===== 敏感任務資料（已存在 Gist 雲端，repo 不需要再放一份）=====
+tasks.json
+TASKS.md
+
+# ===== 內部資料檔 =====
+Tasks.xlsx
+*.xlsx
+*.xls
+TYAS Organizational Chart.png
+
+# ===== 舊版存檔 =====
+tasks.html
+
+# ===== OS / IDE =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*~
+
+# ===== Claude Code 本機設定 =====
+.claude/
+
+# ===== 暫存 =====
+*.log
+*.tmp

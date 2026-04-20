@@ -1,0 +1,3292 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1f4e78">
+<title>任務監控 — Sun (TYAS)</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📋%3C/text%3E%3C/svg%3E">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f3f4f7;
+    --bg-elev: #ffffff;
+    --card: #ffffff;
+    --card-hover: #fafbfc;
+    --border: #e5e7eb;
+    --border-strong: #d1d5db;
+    --text: #111827;
+    --text-soft: #374151;
+    --muted: #6b7280;
+    --muted-soft: #9ca3af;
+    --accent: #1f4e78;
+    --accent-soft: #3b82f6;
+    --ring: rgba(59, 130, 246, 0.18);
+
+    --max-bg: #dc2626;     --max-fg: #ffffff;
+    --high-bg: #f59e0b;    --high-fg: #ffffff;
+    --med-bg: #eab308;     --med-fg: #422006;
+    --low-bg: #9ca3af;     --low-fg: #ffffff;
+
+    --pending-bg: #fee2e2;   --pending-fg: #991b1b;
+    --inprog-bg: #fef3c7;    --inprog-fg: #92400e;
+    --done-bg: #d1fae5;      --done-fg: #065f46;
+
+    --overdue: #dc2626;
+    --today: #ea580c;
+    --soon: #ca8a04;
+    --normal: #374151;
+
+    --cat-AP: #2563eb;
+    --cat-EXAM: #dc2626;
+    --cat-AWARD: #9333ea;
+    --cat-PTC: #059669;
+    --cat-ONBOARD: #0891b2;
+    --cat-GRADE: #db2777;
+    --cat-MISC: #6b7280;
+
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-elev: #1e293b;
+    --card: #1e293b;
+    --card-hover: #253347;
+    --border: #334155;
+    --border-strong: #475569;
+    --text: #f1f5f9;
+    --text-soft: #cbd5e1;
+    --muted: #94a3b8;
+    --muted-soft: #64748b;
+    --accent: #60a5fa;
+    --accent-soft: #93c5fd;
+    --ring: rgba(96, 165, 250, 0.25);
+
+    --pending-bg: #7f1d1d;   --pending-fg: #fecaca;
+    --inprog-bg: #78350f;    --inprog-fg: #fde68a;
+    --done-bg: #064e3b;      --done-fg: #a7f3d0;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px 20px 80px;
+    font-size: 14px;
+    line-height: 1.55;
+    transition: background 0.2s ease, color 0.2s ease;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  /* ===== HEADER ===== */
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .title-block h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .meta {
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .meta .dot { margin: 0 6px; opacity: 0.5; }
+  .sync-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--border);
+    color: var(--text-soft);
+    margin-left: 6px;
+  }
+  .sync-chip.synced { background: var(--done-bg); color: var(--done-fg); }
+  .sync-chip.local { background: var(--inprog-bg); color: var(--inprog-fg); }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .icon-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-soft);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    transition: all 0.15s ease;
+    box-shadow: var(--shadow-sm);
+  }
+  .icon-btn:hover {
+    background: var(--card-hover);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+  .icon-btn.primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .icon-btn.primary:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent-soft);
+  }
+  .icon-btn.danger:hover {
+    background: var(--pending-bg);
+    color: var(--pending-fg);
+    border-color: var(--pending-fg);
+  }
+
+  /* ===== VIEW TABS ===== */
+  .view-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--card);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .view-tab {
+    flex: 1;
+    min-width: 90px;
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .view-tab:hover { color: var(--text); background: var(--card-hover); }
+  .view-tab.active {
+    background: var(--accent);
+    color: white;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ===== PROGRESS & STATS (shared) ===== */
+  .progress-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .progress-label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .progress-track {
+    flex: 1;
+    height: 10px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    border-radius: 999px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .progress-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-soft);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  .stat::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--muted-soft);
+    opacity: 0.5;
+  }
+  .stat.alert::before { background: var(--overdue); opacity: 1; }
+  .stat.warn::before { background: var(--today); opacity: 1; }
+  .stat.info::before { background: var(--cat-AP); opacity: 1; }
+  .stat.success::before { background: #10b981; opacity: 1; }
+  .stat.active {
+    border-color: var(--accent-soft);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.4px;
+    font-weight: 600;
+  }
+  .stat-value {
+    font-size: 26px;
+    font-weight: 700;
+    margin-top: 2px;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat.alert .stat-value { color: var(--overdue); }
+  .stat.warn .stat-value { color: var(--today); }
+  .stat.success .stat-value { color: #059669; }
+  [data-theme="dark"] .stat.success .stat-value { color: #34d399; }
+
+  /* ===== CONTROLS ===== */
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    background: var(--card);
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+  }
+  .controls select, .controls input, .controls button {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-elev);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .controls select:hover, .controls input:hover {
+    border-color: var(--border-strong);
+  }
+  .controls select:focus, .controls input:focus {
+    outline: none;
+    border-color: var(--accent-soft);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+  .controls input[type=search] {
+    flex: 1;
+    min-width: 180px;
+  }
+  .controls button { cursor: pointer; font-weight: 500; }
+  .controls button:hover { background: var(--card-hover); }
+  .search-wrap {
+    flex: 1;
+    min-width: 180px;
+    position: relative;
+  }
+  .search-wrap input {
+    width: 100%;
+    padding-left: 34px;
+  }
+  .search-wrap::before {
+    content: "⌕";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  /* ===== LIST VIEW ===== */
+  .group { margin-bottom: 20px; }
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 0 4px;
+  }
+  .group-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+  .group-title.urgent { color: var(--overdue); }
+  .group-title.today { color: var(--today); }
+  .group-count {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--border);
+    color: var(--text-soft);
+    font-weight: 600;
+  }
+  .group-line { flex: 1; height: 1px; background: var(--border); }
+  .group-list { display: grid; gap: 10px; }
+
+  .task {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--low-bg);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px 20px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+    animation: fadeInUp 0.3s ease backwards;
+    cursor: pointer;
+  }
+  .task:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .task.pri-MAX { border-left-color: var(--max-bg); }
+  .task.pri-High { border-left-color: var(--high-bg); }
+  .task.pri-Medium { border-left-color: var(--med-bg); }
+  .task.pri-Low { border-left-color: var(--low-bg); }
+  .task.done { opacity: 0.6; background: var(--bg); }
+  .task.done .task-title { text-decoration: line-through; }
+  .task.sub { margin-left: 28px; position: relative; }
+  .task.sub::before {
+    content: "";
+    position: absolute;
+    left: -18px; top: 20px;
+    width: 14px; height: 1px;
+    background: var(--border-strong);
+  }
+
+  .task-head {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .task-btn {
+    margin-left: auto;
+    padding: 5px 12px;
+    border: 1px solid var(--border-strong);
+    background: var(--card);
+    color: var(--text-soft);
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .task-btn:hover {
+    background: var(--done-bg);
+    color: var(--done-fg);
+    border-color: var(--done-fg);
+  }
+  .task.done .task-btn {
+    background: transparent;
+    color: var(--muted);
+    border-color: var(--border);
+  }
+  .task.done .task-btn:hover {
+    background: var(--pending-bg);
+    color: var(--pending-fg);
+    border-color: var(--pending-fg);
+  }
+  .status-badge { cursor: pointer; user-select: none; }
+  .status-badge:hover { filter: brightness(0.92); }
+  .task-id {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: var(--bg);
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .task-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+    min-width: 0;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .cat-AP { background: var(--cat-AP); color: #fff; }
+  .cat-EXAM { background: var(--cat-EXAM); color: #fff; }
+  .cat-AWARD { background: var(--cat-AWARD); color: #fff; }
+  .cat-PTC { background: var(--cat-PTC); color: #fff; }
+  .cat-ONBOARD { background: var(--cat-ONBOARD); color: #fff; }
+  .cat-GRADE { background: var(--cat-GRADE); color: #fff; }
+  .cat-MISC { background: var(--cat-MISC); color: #fff; }
+
+  .pri-badge.MAX { background: var(--max-bg); color: var(--max-fg); }
+  .pri-badge.High { background: var(--high-bg); color: var(--high-fg); }
+  .pri-badge.Medium { background: var(--med-bg); color: var(--med-fg); }
+  .pri-badge.Low { background: var(--low-bg); color: var(--low-fg); }
+
+  .status-badge.Pending { background: var(--pending-bg); color: var(--pending-fg); }
+  .status-badge.InProgress { background: var(--inprog-bg); color: var(--inprog-fg); }
+  .status-badge.Done { background: var(--done-bg); color: var(--done-fg); }
+
+  .task-body {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px 24px;
+    font-size: 13px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+  .field-label {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    font-weight: 600;
+  }
+  .field-value {
+    margin-top: 3px;
+    word-break: break-word;
+    white-space: pre-wrap;
+    color: var(--text-soft);
+  }
+  .field-value a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--accent);
+  }
+  .field-value a:hover { border-bottom-style: solid; }
+  .field-value ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .field-value ul li {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+  }
+  .res-label {
+    display: inline-block;
+    min-width: 60px;
+    font-weight: 600;
+    color: var(--text-soft);
+    font-size: 11px;
+  }
+
+  .deadline-wrap {
+    text-align: right;
+    min-width: 110px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+  }
+  .deadline-date {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-soft);
+    font-variant-numeric: tabular-nums;
+  }
+  .days-left {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 2px;
+    color: var(--normal);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .days-left.overdue { color: var(--overdue); }
+  .days-left.today { color: var(--today); }
+  .days-left.soon { color: var(--soon); }
+  .days-left-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+    font-weight: 600;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+  }
+  .empty-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+    opacity: 0.4;
+  }
+
+  /* ===== CALENDAR VIEW ===== */
+  .calendar-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .cal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .cal-nav { display: flex; gap: 6px; }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-dow {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    padding: 8px 0;
+    letter-spacing: 0.5px;
+  }
+  .cal-dow.weekend { color: var(--overdue); }
+  .cal-cell {
+    min-height: 90px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    position: relative;
+  }
+  .cal-cell:hover {
+    border-color: var(--accent-soft);
+    box-shadow: 0 0 0 2px var(--ring);
+  }
+  .cal-cell.other-month { opacity: 0.35; }
+  .cal-cell.today {
+    background: var(--ring);
+    border-color: var(--accent-soft);
+  }
+  .cal-cell.weekend { background: var(--bg); }
+  .cal-date {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-soft);
+    font-variant-numeric: tabular-nums;
+  }
+  .cal-cell.today .cal-date { color: var(--accent); font-weight: 700; }
+  .cal-task {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--card);
+    color: var(--text-soft);
+    border-left: 3px solid var(--low-bg);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: transform 0.1s ease;
+  }
+  .cal-task:hover { transform: scale(1.03); }
+  .cal-task.pri-MAX { border-left-color: var(--max-bg); background: rgba(220, 38, 38, 0.1); }
+  .cal-task.pri-High { border-left-color: var(--high-bg); background: rgba(245, 158, 11, 0.1); }
+  .cal-task.pri-Medium { border-left-color: var(--med-bg); background: rgba(234, 179, 8, 0.1); }
+  .cal-task.pri-Low { border-left-color: var(--low-bg); }
+  .cal-task.done { opacity: 0.5; text-decoration: line-through; }
+  .cal-more {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+    padding-left: 6px;
+  }
+
+  /* ===== DASHBOARD VIEW ===== */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 14px;
+  }
+  .dash-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .dash-card.wide { grid-column: 1 / -1; }
+  .dash-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-soft);
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .dash-title-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+  .donut-wrap {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    margin: 0 auto;
+  }
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .donut-big {
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .donut-small {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .legend {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .legend-label { flex: 1; color: var(--text-soft); }
+  .legend-val {
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 40px;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .bar-label {
+    font-weight: 600;
+    color: var(--text-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bar-track {
+    height: 18px;
+    background: var(--bg);
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.3px;
+  }
+  .bar-val {
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .workload-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .workload-day {
+    padding: 10px 6px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+    background: var(--bg-elev);
+    transition: all 0.2s ease;
+  }
+  .workload-day.today { border-color: var(--accent-soft); box-shadow: 0 0 0 2px var(--ring); }
+  .workload-dow {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .workload-date {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+  }
+  .workload-count {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-top: 4px;
+    min-height: 14px;
+  }
+  .workload-bar {
+    margin-top: 6px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .workload-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--high-bg), var(--overdue));
+    border-radius: 999px;
+  }
+
+  /* ===== GANTT VIEW ===== */
+  .gantt-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+    overflow-x: auto;
+  }
+  .gantt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .gantt-scroll { overflow-x: auto; }
+  .gantt-grid {
+    display: grid;
+    position: relative;
+    min-width: 100%;
+  }
+  .gantt-row {
+    display: grid;
+    align-items: center;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 6px 0;
+  }
+  .gantt-row.header {
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    z-index: 1;
+    border-bottom: 2px solid var(--border-strong);
+    padding: 8px 0;
+  }
+  .gantt-label {
+    padding: 0 12px 0 0;
+    font-size: 12px;
+    color: var(--text-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-right: 1px solid var(--border);
+  }
+  .gantt-track {
+    position: relative;
+    height: 28px;
+    border-right: 1px dashed var(--border);
+  }
+  .gantt-today-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--overdue);
+    z-index: 2;
+  }
+  .gantt-bar {
+    position: absolute;
+    top: 4px;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: var(--shadow-sm);
+  }
+  .gantt-bar:hover {
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: var(--shadow-md);
+  }
+  .gantt-bar.done { opacity: 0.5; }
+  .gantt-month-cell {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-align: left;
+    border-right: 1px solid var(--border);
+    letter-spacing: 0.5px;
+  }
+
+  /* ===== FAB ===== */
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 100;
+  }
+  .fab:hover {
+    background: var(--accent-soft);
+    transform: translateY(-2px) scale(1.05);
+  }
+
+  /* ===== MODAL ===== */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 16px;
+    animation: fadeIn 0.15s ease;
+  }
+  .modal-backdrop.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    background: var(--card);
+    border-radius: 14px;
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .modal-close {
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    color: var(--muted);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-close:hover { background: var(--bg); color: var(--text); }
+  .modal-body { padding: 20px 22px; }
+  .modal-footer {
+    padding: 14px 22px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .modal-footer-right { display: flex; gap: 8px; }
+
+  .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 14px;
+  }
+  .form-row.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .form-row.grid-2 > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+  }
+  .form-input, .form-select, .form-textarea {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-elev);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    transition: border 0.15s ease;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--accent-soft);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+  .form-textarea {
+    resize: vertical;
+    min-height: 70px;
+  }
+  .resources-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .resource-row {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 6px;
+    align-items: center;
+  }
+  .resource-row input {
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-elev);
+    color: var(--text);
+    font-family: inherit;
+  }
+  .resource-row .remove-res {
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .resource-row .remove-res:hover {
+    color: var(--overdue);
+    border-color: var(--overdue);
+  }
+  .add-res {
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px dashed var(--border-strong);
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 600;
+  }
+  .add-res:hover { border-color: var(--accent-soft); color: var(--accent); }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow-lg);
+    font-size: 13px;
+    color: var(--text);
+    z-index: 300;
+    max-width: 340px;
+    animation: slideIn 0.25s ease;
+  }
+  .toast.success { border-left-color: #10b981; }
+  .toast.error { border-left-color: var(--overdue); }
+  .toast.warn { border-left-color: var(--high-bg); }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* ===== SETUP BANNER ===== */
+  .setup-banner {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 1px solid #f59e0b;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  [data-theme="dark"] .setup-banner {
+    background: linear-gradient(135deg, #78350f, #92400e);
+    border-color: #f59e0b;
+    color: #fde68a;
+  }
+  .setup-banner-text { font-size: 13px; font-weight: 500; flex: 1; }
+  .setup-banner-text strong { color: #92400e; }
+  [data-theme="dark"] .setup-banner-text strong { color: #fde68a; }
+  .setup-banner-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  footer {
+    margin: 36px auto 0;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+  }
+  footer code {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--card);
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 640px) {
+    body { padding: 14px 12px 80px; }
+    .task { grid-template-columns: 1fr; }
+    .deadline-wrap {
+      text-align: left;
+      border-left: none;
+      padding-left: 0;
+      border-top: 1px dashed var(--border);
+      padding-top: 8px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .task.sub { margin-left: 14px; }
+    .task.sub::before { left: -12px; width: 10px; }
+    .cal-cell { min-height: 60px; padding: 4px; }
+    .cal-cell .cal-task { font-size: 9px; }
+    .workload-grid { grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .workload-day { padding: 6px 2px; }
+    .workload-date { font-size: 13px; }
+    .form-row.grid-2 { grid-template-columns: 1fr; }
+    .resource-row { grid-template-columns: 80px 1fr auto; }
+    .view-tab { padding: 8px 10px; font-size: 12px; min-width: 72px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Setup banner: shows when sync not configured -->
+  <div class="setup-banner hidden" id="setup-banner">
+    <div class="setup-banner-text">
+      <strong>⚠ 尚未設定雲端同步</strong>
+      — 目前僅使用本機暫存。建議設定 <strong>GitHub Gist</strong> 以跨裝置（家/學校）同步，並讓 Claude 在任何地方協助編輯。
+    </div>
+    <div class="setup-banner-actions">
+      <button class="icon-btn primary" id="open-settings-banner">⚙ 開啟設定</button>
+      <button class="icon-btn" id="dismiss-setup-btn">稍後</button>
+    </div>
+  </div>
+
+  <header>
+    <div class="title-block">
+      <h1>任務監控</h1>
+      <div class="meta">
+        Sun<span class="dot">·</span>桃園美國學校<span class="dot">·</span><span id="today-label"></span>
+        <span class="sync-chip" id="sync-chip">未連結</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="reload-btn" title="重新讀取資料">🔄 重新載入</button>
+      <button class="icon-btn" id="settings-btn" title="同步設定">⚙ 同步</button>
+      <button class="icon-btn" id="notify-btn" title="切換通知">🔔</button>
+      <button class="icon-btn" id="theme-toggle" title="切換主題">◐</button>
+    </div>
+  </header>
+
+  <!-- View tabs -->
+  <div class="view-tabs" role="tablist">
+    <button class="view-tab active" data-view="list" role="tab">📋 清單</button>
+    <button class="view-tab" data-view="calendar" role="tab">📅 行事曆</button>
+    <button class="view-tab" data-view="dashboard" role="tab">📊 儀表板</button>
+    <button class="view-tab" data-view="gantt" role="tab">📈 甘特圖</button>
+  </div>
+
+  <!-- Views -->
+  <div id="view-list" class="view">
+    <div class="progress-wrap">
+      <div class="progress-label">整體進度</div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
+      <div class="progress-text" id="progress-text">0 / 0</div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="controls">
+      <select id="filter-category" aria-label="分類">
+        <option value="">全部分類</option>
+        <option value="AP">AP</option>
+        <option value="EXAM">EXAM</option>
+        <option value="AWARD">AWARD</option>
+        <option value="PTC">PTC</option>
+        <option value="ONBOARD">ONBOARD</option>
+        <option value="GRADE">GRADE</option>
+        <option value="MISC">MISC</option>
+      </select>
+      <select id="filter-status" aria-label="狀態">
+        <option value="">全部狀態</option>
+        <option value="待辦">待辦</option>
+        <option value="進行中">進行中</option>
+        <option value="已完成">已完成</option>
+      </select>
+      <select id="filter-priority" aria-label="優先級">
+        <option value="">全部優先級</option>
+        <option value="MAX">MAX</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+      <select id="sort-by" aria-label="排序">
+        <option value="smart">智能排序</option>
+        <option value="deadline">按截止日</option>
+        <option value="priority">按優先級</option>
+        <option value="created">按建立日</option>
+      </select>
+      <div class="search-wrap">
+        <input type="search" id="search" placeholder="搜尋任務、關鍵人、備註… (/)">
+      </div>
+      <button id="reset" title="重設 (Esc)">重設</button>
+    </div>
+
+    <div id="list"></div>
+  </div>
+
+  <div id="view-calendar" class="view hidden">
+    <div class="calendar-wrap">
+      <div class="cal-header">
+        <div class="cal-title" id="cal-title">—</div>
+        <div class="cal-nav">
+          <button class="icon-btn" id="cal-prev">◀</button>
+          <button class="icon-btn" id="cal-today">今天</button>
+          <button class="icon-btn" id="cal-next">▶</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+  </div>
+
+  <div id="view-dashboard" class="view hidden">
+    <div class="dashboard-grid">
+      <div class="dash-card">
+        <div class="dash-title">完成率 <span class="dash-title-sub" id="dash-total-sub"></span></div>
+        <div class="donut-wrap">
+          <svg viewBox="0 0 160 160" width="160" height="160" id="dash-donut-progress"></svg>
+          <div class="donut-center">
+            <div class="donut-big" id="dash-progress-pct">0%</div>
+            <div class="donut-small" id="dash-progress-txt">0 / 0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-card">
+        <div class="dash-title">分類佔比</div>
+        <div class="donut-wrap">
+          <svg viewBox="0 0 160 160" width="160" height="160" id="dash-donut-category"></svg>
+          <div class="donut-center">
+            <div class="donut-big" id="dash-cat-total">0</div>
+            <div class="donut-small">任務總數</div>
+          </div>
+        </div>
+        <div class="legend" id="dash-cat-legend"></div>
+      </div>
+
+      <div class="dash-card">
+        <div class="dash-title">優先級分布</div>
+        <div class="bar-chart" id="dash-priority-chart"></div>
+      </div>
+
+      <div class="dash-card">
+        <div class="dash-title">狀態分布</div>
+        <div class="bar-chart" id="dash-status-chart"></div>
+      </div>
+
+      <div class="dash-card wide">
+        <div class="dash-title">未來 7 天工作負載 <span class="dash-title-sub">每天到期任務數</span></div>
+        <div class="workload-grid" id="dash-workload"></div>
+      </div>
+
+      <div class="dash-card wide">
+        <div class="dash-title">關鍵人員任務量 <span class="dash-title-sub">依關鍵人分組</span></div>
+        <div class="bar-chart" id="dash-keyperson-chart"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-gantt" class="view hidden">
+    <div class="gantt-wrap">
+      <div class="gantt-header">
+        <div>
+          <div class="dash-title" style="margin-bottom: 2px;">甘特圖 <span class="dash-title-sub">任務時間軸（建立日 → 截止日）</span></div>
+        </div>
+        <div class="cal-nav">
+          <button class="icon-btn" id="gantt-zoom-out">−</button>
+          <button class="icon-btn" id="gantt-zoom-in">+</button>
+        </div>
+      </div>
+      <div class="gantt-scroll" id="gantt-container"></div>
+    </div>
+  </div>
+
+  <footer>
+    資料：<code id="footer-source">tasks.json (本機暫存)</code>
+    <span class="dot">·</span>
+    <span>/ 搜尋 · Esc 重設 · N 新增</span>
+  </footer>
+
+</div>
+
+<!-- FAB: Add task -->
+<button class="fab" id="fab-add" title="新增任務 (N)">+</button>
+
+<!-- Modal: Settings / Sync -->
+<div class="modal-backdrop" id="modal-settings">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">同步設定</div>
+      <button class="modal-close" data-close-settings>×</button>
+    </div>
+    <div class="modal-body">
+      <div class="sync-modes" style="display:flex; gap:6px; margin-bottom:16px; background:var(--bg); padding:4px; border-radius:8px;">
+        <button class="sync-mode-tab" data-sync-mode="gist" style="flex:1; padding:8px; border:none; background:transparent; color:var(--muted); font-weight:600; font-size:13px; border-radius:6px; cursor:pointer; font-family:inherit;">☁️ GitHub Gist</button>
+        <button class="sync-mode-tab" data-sync-mode="file" style="flex:1; padding:8px; border:none; background:transparent; color:var(--muted); font-weight:600; font-size:13px; border-radius:6px; cursor:pointer; font-family:inherit;">📁 本地檔案</button>
+        <button class="sync-mode-tab" data-sync-mode="local" style="flex:1; padding:8px; border:none; background:transparent; color:var(--muted); font-weight:600; font-size:13px; border-radius:6px; cursor:pointer; font-family:inherit;">💾 僅本機</button>
+      </div>
+
+      <!-- Gist Panel -->
+      <div class="sync-panel" id="sync-panel-gist">
+        <div style="background:var(--bg); border-radius:8px; padding:12px 14px; margin-bottom:14px; font-size:12.5px; line-height:1.6; color:var(--text-soft);">
+          <strong style="color:var(--accent);">✨ 推薦：跨裝置即時同步</strong><br>
+          將 <code style="background:var(--card); padding:1px 5px; border-radius:3px; font-size:11px;">tasks.json</code> 儲存在 GitHub Gist（私密）。家 / 學校 / 手機只要輸入同一組設定即可同步；Claude 也能用 <code style="background:var(--card); padding:1px 5px; border-radius:3px; font-size:11px;">gh gist edit</code> 編輯。
+        </div>
+        <div class="form-row">
+          <label class="form-label">Gist ID *</label>
+          <input type="text" class="form-input" id="gist-id" placeholder="e.g. a1b2c3d4e5f6789... (gist URL 最後那串 hash)">
+          <div style="font-size:11px; color:var(--muted); margin-top:4px;">在 <a href="https://gist.github.com/" target="_blank" style="color:var(--accent);">gist.github.com</a> 建立 secret gist，檔名必須是 <code>tasks.json</code></div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Personal Access Token *</label>
+          <input type="password" class="form-input" id="gist-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+          <div style="font-size:11px; color:var(--muted); margin-top:4px;">
+            在 <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--accent);">settings/tokens</a> → Generate (classic) → <strong>只勾 gist 權限</strong><br>
+            Token 僅儲存在你這台瀏覽器的 localStorage，不會外傳
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">
+            <input type="checkbox" id="gist-auto-pull" style="vertical-align:middle; margin-right:4px;" checked>
+            開啟網頁時自動從 Gist 抓最新資料
+          </label>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
+          <button class="icon-btn" id="gist-test-btn">🔍 測試連線</button>
+          <button class="icon-btn" id="gist-pull-btn">⬇ 從 Gist 拉下來（覆蓋本機）</button>
+          <button class="icon-btn" id="gist-push-btn">⬆ 將本機推到 Gist（覆蓋雲端）</button>
+        </div>
+        <div id="gist-status" style="margin-top:12px; padding:10px 12px; border-radius:8px; font-size:12.5px; display:none;"></div>
+      </div>
+
+      <!-- File Panel -->
+      <div class="sync-panel hidden" id="sync-panel-file">
+        <div style="background:var(--bg); border-radius:8px; padding:12px 14px; margin-bottom:14px; font-size:12.5px; line-height:1.6; color:var(--text-soft);">
+          直接讀寫本機的 <code style="background:var(--card); padding:1px 5px; border-radius:3px; font-size:11px;">tasks.json</code> 檔（透過 File System Access API，Chrome / Edge 支援）。<strong>僅限單一裝置</strong>；若要跨裝置請用 Gist 模式。
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="icon-btn primary" id="connect-file-btn">🔗 連結 tasks.json 檔</button>
+          <button class="icon-btn danger" id="disconnect-file-btn">解除連結</button>
+        </div>
+        <div id="file-status" style="margin-top:12px; padding:10px 12px; border-radius:8px; font-size:12.5px; display:none;"></div>
+      </div>
+
+      <!-- Local Panel -->
+      <div class="sync-panel hidden" id="sync-panel-local">
+        <div style="background:var(--bg); border-radius:8px; padding:12px 14px; margin-bottom:14px; font-size:12.5px; line-height:1.6; color:var(--text-soft);">
+          資料只存在此瀏覽器的 localStorage。適合臨時試用；<strong>清除瀏覽器資料時會遺失</strong>，也無法跨裝置。
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="icon-btn" id="export-json-btn">📥 匯出 tasks.json</button>
+          <button class="icon-btn" id="import-json-btn">📤 匯入 JSON</button>
+          <input type="file" id="import-json-file" accept=".json,application/json" style="display:none;">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div></div>
+      <div class="modal-footer-right">
+        <button class="icon-btn" data-close-settings>關閉</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Task Editor -->
+<div class="modal-backdrop" id="modal-task">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">新增任務</div>
+      <button class="modal-close" id="modal-close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="form-label">任務描述 *</label>
+        <input type="text" class="form-input" id="f-task" placeholder="e.g. 回收 Q3 期中考考卷" required>
+      </div>
+      <div class="form-row grid-2">
+        <div>
+          <label class="form-label">ID</label>
+          <input type="text" class="form-input" id="f-id" placeholder="auto-generated">
+        </div>
+        <div>
+          <label class="form-label">分類 *</label>
+          <select class="form-select" id="f-category">
+            <option value="MISC">MISC</option>
+            <option value="AP">AP</option>
+            <option value="EXAM">EXAM</option>
+            <option value="AWARD">AWARD</option>
+            <option value="PTC">PTC</option>
+            <option value="ONBOARD">ONBOARD</option>
+            <option value="GRADE">GRADE</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row grid-2">
+        <div>
+          <label class="form-label">狀態 *</label>
+          <select class="form-select" id="f-status">
+            <option value="待辦">待辦</option>
+            <option value="進行中">進行中</option>
+            <option value="已完成">已完成</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">優先級 *</label>
+          <select class="form-select" id="f-priority">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="MAX">MAX</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row grid-2">
+        <div>
+          <label class="form-label">建立日</label>
+          <input type="date" class="form-input" id="f-created">
+        </div>
+        <div>
+          <label class="form-label">截止日</label>
+          <input type="date" class="form-input" id="f-deadline">
+        </div>
+      </div>
+      <div class="form-row grid-2">
+        <div>
+          <label class="form-label">預估（小時）</label>
+          <input type="number" step="0.5" class="form-input" id="f-est" placeholder="e.g. 2.5">
+        </div>
+        <div>
+          <label class="form-label">實際（小時）</label>
+          <input type="number" step="0.5" class="form-input" id="f-actual" placeholder="e.g. 3">
+        </div>
+      </div>
+      <div class="form-row grid-2">
+        <div>
+          <label class="form-label">關鍵人</label>
+          <input type="text" class="form-input" id="f-keyperson" placeholder="e.g. Matthew">
+        </div>
+        <div>
+          <label class="form-label">父任務 ID</label>
+          <input type="text" class="form-input" id="f-parent" placeholder="e.g. ONBOARD001">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">相關資料（連結）</label>
+        <div class="resources-list" id="f-resources-list"></div>
+        <button type="button" class="add-res" id="f-add-res">+ 新增連結</button>
+      </div>
+      <div class="form-row">
+        <label class="form-label">備註</label>
+        <textarea class="form-textarea" id="f-notes" placeholder="任意備註…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="icon-btn danger hidden" id="modal-delete">🗑 刪除</button>
+      <div class="modal-footer-right">
+        <button class="icon-btn" id="modal-cancel">取消</button>
+        <button class="icon-btn primary" id="modal-save">儲存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== EMBEDDED INITIAL DATA (fallback for first load) ========== -->
+<script id="initial-data" type="application/json">
+{
+  "meta": { "owner": "Sun", "email": "sunflowerrocker@gmail.com", "scope": "桃園美國學校（TYAS）" },
+  "tasks": [
+    { "id": "ONBOARD001.1", "task": "改良表格合併", "category": "ONBOARD", "status": "進行中", "priority": "High", "created": "2026-04-20", "deadline": "2026-04-20", "est": null, "actual": null, "keyPerson": "", "resources": [], "parentId": "ONBOARD001", "notes": "" },
+    { "id": "GRADE001", "task": "確認 Elena 2025-2026 Q2 成績是否被異動", "category": "GRADE", "status": "待辦", "priority": "MAX", "created": "2026-04-20", "deadline": "2026-04-21", "est": null, "actual": null, "keyPerson": "Matthew", "resources": [], "parentId": "", "notes": "特殊事件" },
+    { "id": "ONBOARD001.2", "task": "給 Jessica 過目", "category": "ONBOARD", "status": "待辦", "priority": "High", "created": "2026-04-20", "deadline": "2026-04-21", "est": null, "actual": null, "keyPerson": "Jessica", "resources": [], "parentId": "ONBOARD001", "notes": "" },
+    { "id": "EXAM001", "task": "回收 Q3 期中考考卷", "category": "EXAM", "status": "進行中", "priority": "High", "created": "2026-04-20", "deadline": "2026-04-24", "est": null, "actual": null, "keyPerson": "", "resources": [], "parentId": "", "notes": "未交回：Joe、Matt、Richard、Thierry" },
+    { "id": "GRADE002", "task": "Q3 學生成績彙整", "category": "GRADE", "status": "待辦", "priority": "High", "created": "2026-04-20", "deadline": "2026-04-24", "est": null, "actual": null, "keyPerson": "Andrew", "resources": [{"label":"資料夾","url":"https://drive.google.com/drive/folders/1vhWRSU_6kZNlSff9zBhOknPJE1_Q0YrQ"}], "parentId": "", "notes": "" },
+    { "id": "AP001", "task": "製作 AP Exam Check-in 網頁", "category": "AP", "status": "待辦", "priority": "High", "created": "2026-04-20", "deadline": "2026-05-01", "est": null, "actual": null, "keyPerson": "George", "resources": [], "parentId": "", "notes": "" },
+    { "id": "ONBOARD001", "task": "新生包網頁製作", "category": "ONBOARD", "status": "進行中", "priority": "Medium", "created": "2026-04-20", "deadline": "2026-05-31", "est": null, "actual": null, "keyPerson": "", "resources": [{"label":"網頁","url":"https://tinyurl.com/tyaspacket"},{"label":"GAS","url":"https://script.google.com/u/0/home/projects/1YjGRpmEOUv53iJZ2FQWbZX4yxbtZqZAjFrlFQMTT4MLFAhbV-ER30EEV/edit"},{"label":"後台","url":"https://docs.google.com/spreadsheets/d/1KzxbBdyU0OJkzRj1KBmgKDdxtdMjeAZ-1y5AY9pqbyM/edit?gid=1086322871"}], "parentId": "", "notes": "子任務：ONBOARD001.1、ONBOARD001.2" }
+  ]
+}
+</script>
+
+<script>
+/* ==========================================================================
+ * 任務監控 Web App — 單檔實作
+ * - 資料來源：tasks.json（File System Access API）/ localStorage fallback
+ * - 四個視圖：清單、行事曆、儀表板、甘特圖
+ * - CRUD + 通知 + PWA + 響應式
+ * ========================================================================== */
+
+const PRI_ORDER = { "MAX": 0, "High": 1, "Medium": 2, "Low": 3 };
+const STATUS_CLASS = { "待辦": "Pending", "進行中": "InProgress", "已完成": "Done" };
+const STATUS_CYCLE = { "待辦": "進行中", "進行中": "已完成", "已完成": "待辦" };
+const CAT_COLORS = {
+  AP: "#2563eb", EXAM: "#dc2626", AWARD: "#9333ea",
+  PTC: "#059669", ONBOARD: "#0891b2", GRADE: "#db2777", MISC: "#6b7280"
+};
+const PRI_COLORS = { MAX: "#dc2626", High: "#f59e0b", Medium: "#eab308", Low: "#9ca3af" };
+const STATUS_COLORS = { "待辦": "#ef4444", "進行中": "#f59e0b", "已完成": "#10b981" };
+
+const STORAGE_KEY = "tasktracker.filters.v4";
+const THEME_KEY = "tasktracker.theme";
+const VIEW_KEY = "tasktracker.view";
+const TASKS_CACHE_KEY = "tasktracker.tasksCache.v1";
+const NOTIFY_KEY = "tasktracker.notify";
+const NOTIFY_SHOWN_KEY = "tasktracker.notifyShown.v1";
+const DISMISS_SETUP_KEY = "tasktracker.setupDismissed";
+const SYNC_MODE_KEY = "tasktracker.syncMode";       // "gist" | "file" | "local"
+const GIST_CONFIG_KEY = "tasktracker.gistConfig.v1"; // {id, token, autoPull}
+const GIST_ETAG_KEY = "tasktracker.gistEtag.v1";    // last seen etag
+
+/* ========================= STATE ========================= */
+const State = {
+  tasks: [],
+  meta: {},
+  fileHandle: null,
+  syncMode: "local",      // "gist" | "file" | "local"
+  gistConfig: null,       // {id, token, autoPull}
+  lastEtag: null,         // for conflict detection
+  currentView: "list",
+  filters: { cat: "", stat: "", pri: "", q: "", timeFilter: "" },
+  calDate: new Date(),
+  ganttZoom: 20, // px per day
+  editingId: null,
+  saveTimer: null,        // debounce timer for auto-save
+};
+
+/* ========================= UTILS ========================= */
+function today() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+function ymd(d) {
+  if (!d) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function parseDate(s) {
+  if (!s) return null;
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+function daysLeft(deadline) {
+  if (!deadline) return null;
+  const ms = parseDate(deadline) - today();
+  return Math.round(ms / 86400000);
+}
+function dowLabel(s) {
+  const d = parseDate(s);
+  if (!d) return "";
+  return ["週日", "週一", "週二", "週三", "週四", "週五", "週六"][d.getDay()];
+}
+function escapeHtml(s) {
+  if (s == null) return "";
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+function toast(msg, type = "info") {
+  document.querySelectorAll(".toast").forEach(t => t.remove());
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity 0.3s"; }, 2500);
+  setTimeout(() => el.remove(), 2800);
+}
+function daysBetween(a, b) {
+  return Math.round((parseDate(b) - parseDate(a)) / 86400000);
+}
+
+/* ========================= IndexedDB (for FileHandle persistence) ========================= */
+const DB_NAME = "tasktrackerDB";
+const DB_STORE = "handles";
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSet(key, val) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).put(val, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function idbGet(key) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readonly");
+    const req = tx.objectStore(DB_STORE).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbDelete(key) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/* ========================= GIST API ========================= */
+function loadGistConfig() {
+  try {
+    const raw = localStorage.getItem(GIST_CONFIG_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function saveGistConfig(cfg) {
+  try { localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify(cfg)); } catch (e) {}
+}
+function clearGistConfig() {
+  try {
+    localStorage.removeItem(GIST_CONFIG_KEY);
+    localStorage.removeItem(GIST_ETAG_KEY);
+  } catch (e) {}
+}
+
+async function gistGet(cfg) {
+  const res = await fetch(`https://api.github.com/gists/${cfg.id}`, {
+    headers: {
+      "Authorization": `Bearer ${cfg.token}`,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const msg = res.status === 401 ? "Token 無效或過期"
+      : res.status === 404 ? "找不到 Gist（請檢查 Gist ID）"
+      : res.status === 403 ? "權限不足（Token 需有 gist scope）"
+      : `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  const etag = res.headers.get("ETag");
+  const data = await res.json();
+  const file = data.files && (data.files["tasks.json"] || Object.values(data.files)[0]);
+  if (!file) throw new Error("Gist 中沒有任何檔案");
+  let content = file.content;
+  if (file.truncated && file.raw_url) {
+    const rawRes = await fetch(file.raw_url, {
+      headers: { "Authorization": `Bearer ${cfg.token}` },
+      cache: "no-store",
+    });
+    content = await rawRes.text();
+  }
+  let parsed;
+  try { parsed = JSON.parse(content); }
+  catch (e) { throw new Error("tasks.json 內容不是有效的 JSON"); }
+  return { data: parsed, etag, filename: file.filename };
+}
+
+async function gistPut(cfg, payload) {
+  const res = await fetch(`https://api.github.com/gists/${cfg.id}`, {
+    method: "PATCH",
+    headers: {
+      "Authorization": `Bearer ${cfg.token}`,
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+    body: JSON.stringify({
+      files: { "tasks.json": { content: JSON.stringify(payload, null, 2) } },
+    }),
+  });
+  if (!res.ok) {
+    const msg = res.status === 401 ? "Token 無效或過期"
+      : res.status === 404 ? "找不到 Gist"
+      : res.status === 403 ? "權限不足或速率限制"
+      : `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  const etag = res.headers.get("ETag");
+  return { etag };
+}
+
+async function testGistConnection(cfg) {
+  const { data, filename } = await gistGet(cfg);
+  return {
+    ok: true,
+    filename,
+    taskCount: (data && Array.isArray(data.tasks)) ? data.tasks.length : 0,
+    updatedAt: data?.meta?.updatedAt || "—",
+  };
+}
+
+/* ========================= DATA PERSISTENCE ========================= */
+async function verifyHandlePermission(handle, readWrite = true) {
+  const options = { mode: readWrite ? "readwrite" : "read" };
+  if ((await handle.queryPermission(options)) === "granted") return true;
+  if ((await handle.requestPermission(options)) === "granted") return true;
+  return false;
+}
+
+async function loadTasks() {
+  // Determine sync mode
+  State.syncMode = localStorage.getItem(SYNC_MODE_KEY) || "local";
+  State.gistConfig = loadGistConfig();
+
+  // 1) Gist mode
+  if (State.syncMode === "gist" && State.gistConfig && State.gistConfig.autoPull !== false) {
+    try {
+      updateSyncChip("syncing");
+      const { data, etag } = await gistGet(State.gistConfig);
+      State.tasks = data.tasks || [];
+      State.meta = data.meta || {};
+      State.lastEtag = etag;
+      try { localStorage.setItem(GIST_ETAG_KEY, etag || ""); } catch (e) {}
+      cacheToLocalStorage();
+      updateSyncChip("gist");
+      return;
+    } catch (e) {
+      toast("從 Gist 讀取失敗：" + e.message + "（改用本機快取）", "error");
+      // fall through to cache
+    }
+  }
+
+  // 2) File mode
+  if (State.syncMode === "file") {
+    try {
+      const handle = await idbGet("tasksFileHandle");
+      if (handle && await verifyHandlePermission(handle)) {
+        const file = await handle.getFile();
+        const text = await file.text();
+        const data = JSON.parse(text);
+        State.fileHandle = handle;
+        State.tasks = data.tasks || [];
+        State.meta = data.meta || {};
+        updateSyncChip("file");
+        cacheToLocalStorage();
+        return;
+      }
+    } catch (e) { /* fall through */ }
+  }
+
+  // 3) localStorage cache
+  try {
+    const cached = localStorage.getItem(TASKS_CACHE_KEY);
+    if (cached) {
+      const data = JSON.parse(cached);
+      State.tasks = data.tasks || [];
+      State.meta = data.meta || {};
+      updateSyncChip(State.syncMode === "gist" ? "gist-offline" : "local");
+      return;
+    }
+  } catch (e) { /* fall through */ }
+
+  // 4) Embedded initial data
+  try {
+    const init = JSON.parse(document.getElementById("initial-data").textContent);
+    State.tasks = init.tasks || [];
+    State.meta = init.meta || {};
+    cacheToLocalStorage();
+  } catch (e) {
+    State.tasks = [];
+  }
+  updateSyncChip(State.syncMode === "gist" ? "gist-offline" : "local");
+}
+
+function cacheToLocalStorage() {
+  try {
+    localStorage.setItem(TASKS_CACHE_KEY, JSON.stringify({ meta: State.meta, tasks: State.tasks }));
+  } catch (e) {}
+}
+
+function buildPayload() {
+  return {
+    meta: { ...State.meta, updatedAt: ymd(new Date()), schemaVersion: 1 },
+    tasks: State.tasks,
+  };
+}
+
+async function saveTasks() {
+  cacheToLocalStorage();
+
+  // Gist mode — debounce to avoid hammering the API
+  if (State.syncMode === "gist" && State.gistConfig) {
+    if (State.saveTimer) clearTimeout(State.saveTimer);
+    updateSyncChip("dirty");
+    State.saveTimer = setTimeout(async () => {
+      try {
+        updateSyncChip("syncing");
+        const { etag } = await gistPut(State.gistConfig, buildPayload());
+        State.lastEtag = etag;
+        try { localStorage.setItem(GIST_ETAG_KEY, etag || ""); } catch (e) {}
+        updateSyncChip("gist");
+      } catch (e) {
+        updateSyncChip("gist-error");
+        toast("Gist 寫入失敗：" + e.message, "error");
+      }
+    }, 800);
+    return;
+  }
+
+  // File mode
+  if (State.syncMode === "file" && State.fileHandle) {
+    try {
+      if (!await verifyHandlePermission(State.fileHandle)) {
+        toast("檔案權限已失效，改存本機", "warn");
+        State.fileHandle = null;
+        updateSyncChip("local");
+        return;
+      }
+      const writable = await State.fileHandle.createWritable();
+      await writable.write(JSON.stringify(buildPayload(), null, 2));
+      await writable.close();
+      updateSyncChip("file");
+    } catch (e) {
+      console.error(e);
+      toast("寫入檔案失敗：" + e.message, "error");
+    }
+  }
+}
+
+async function connectFile() {
+  if (!window.showOpenFilePicker) {
+    toast("此瀏覽器不支援檔案存取（請用 Chrome/Edge）", "error");
+    return;
+  }
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [{ description: "Tasks JSON", accept: { "application/json": [".json"] } }],
+      suggestedName: "tasks.json",
+    });
+    if (!await verifyHandlePermission(handle)) {
+      toast("未授權讀寫檔案", "warn");
+      return;
+    }
+    await idbSet("tasksFileHandle", handle);
+    State.fileHandle = handle;
+    State.syncMode = "file";
+    localStorage.setItem(SYNC_MODE_KEY, "file");
+    const file = await handle.getFile();
+    const text = await file.text();
+    const data = JSON.parse(text);
+    State.tasks = data.tasks || [];
+    State.meta = data.meta || {};
+    updateSyncChip("file");
+    document.getElementById("setup-banner").classList.add("hidden");
+    cacheToLocalStorage();
+    refreshAll();
+    toast("已連結 tasks.json — 資料將自動同步到此檔", "success");
+    showFileStatus(true, handle.name || "tasks.json");
+  } catch (e) {
+    if (e.name !== "AbortError") {
+      toast("連結失敗：" + e.message, "error");
+    }
+  }
+}
+
+async function reloadFromSource() {
+  if (State.syncMode === "gist" && State.gistConfig) {
+    try {
+      updateSyncChip("syncing");
+      const { data, etag } = await gistGet(State.gistConfig);
+      State.tasks = data.tasks || [];
+      State.meta = data.meta || {};
+      State.lastEtag = etag;
+      cacheToLocalStorage();
+      updateSyncChip("gist");
+      refreshAll();
+      toast("已從 Gist 重新載入最新資料", "success");
+    } catch (e) {
+      updateSyncChip("gist-error");
+      toast("從 Gist 載入失敗：" + e.message, "error");
+    }
+    return;
+  }
+  if (State.syncMode === "file" && State.fileHandle) {
+    try {
+      if (!await verifyHandlePermission(State.fileHandle)) return;
+      const file = await State.fileHandle.getFile();
+      const text = await file.text();
+      const data = JSON.parse(text);
+      State.tasks = data.tasks || [];
+      State.meta = data.meta || {};
+      cacheToLocalStorage();
+      refreshAll();
+      toast("已重新讀取 tasks.json", "success");
+    } catch (e) {
+      toast("重新載入失敗：" + e.message, "error");
+    }
+    return;
+  }
+  toast("尚未設定同步來源，請點「⚙ 同步」設定", "warn");
+  openSettingsModal();
+}
+
+async function disconnectFile() {
+  await idbDelete("tasksFileHandle");
+  State.fileHandle = null;
+  if (State.syncMode === "file") {
+    State.syncMode = "local";
+    localStorage.setItem(SYNC_MODE_KEY, "local");
+    updateSyncChip("local");
+  }
+  showFileStatus(false);
+  toast("已解除檔案連結", "info");
+}
+
+function updateSyncChip(mode) {
+  const chip = document.getElementById("sync-chip");
+  const footer = document.getElementById("footer-source");
+  const banner = document.getElementById("setup-banner");
+  chip.className = "sync-chip";
+  const dismissed = localStorage.getItem(DISMISS_SETUP_KEY) === "1";
+
+  switch (mode) {
+    case "gist":
+      chip.classList.add("synced");
+      chip.textContent = "☁ Gist 已同步";
+      footer.textContent = `GitHub Gist (${State.gistConfig?.id?.slice(0, 8) || "—"}…)`;
+      banner.classList.add("hidden");
+      break;
+    case "syncing":
+      chip.classList.add("local");
+      chip.textContent = "⟳ 同步中…";
+      break;
+    case "dirty":
+      chip.classList.add("local");
+      chip.textContent = "● 待同步";
+      break;
+    case "gist-offline":
+      chip.classList.add("local");
+      chip.textContent = "⚠ Gist 離線（使用快取）";
+      footer.textContent = "GitHub Gist (離線 — 讀取本機快取)";
+      banner.classList.add("hidden");
+      break;
+    case "gist-error":
+      chip.classList.add("local");
+      chip.textContent = "✗ Gist 同步錯誤";
+      break;
+    case "file":
+      chip.classList.add("synced");
+      chip.textContent = "✓ 已同步檔案";
+      footer.textContent = "tasks.json (已連結本機檔)";
+      banner.classList.add("hidden");
+      break;
+    case "local":
+    default:
+      chip.classList.add("local");
+      chip.textContent = "⚠ 本機暫存";
+      footer.textContent = "本機暫存 (localStorage)";
+      if (!dismissed) banner.classList.remove("hidden");
+      break;
+  }
+}
+
+function showFileStatus(connected, name) {
+  const el = document.getElementById("file-status");
+  if (!el) return;
+  if (connected) {
+    el.style.display = "block";
+    el.style.background = "var(--done-bg)";
+    el.style.color = "var(--done-fg)";
+    el.textContent = `✓ 已連結：${name}`;
+  } else {
+    el.style.display = "none";
+  }
+}
+
+/* ========================= SETTINGS / SYNC UI ========================= */
+function openSettingsModal() {
+  // Populate current config
+  const cfg = State.gistConfig || { id: "", token: "", autoPull: true };
+  document.getElementById("gist-id").value = cfg.id || "";
+  document.getElementById("gist-token").value = cfg.token || "";
+  document.getElementById("gist-auto-pull").checked = cfg.autoPull !== false;
+  document.getElementById("gist-status").style.display = "none";
+
+  if (State.fileHandle) {
+    showFileStatus(true, State.fileHandle.name || "tasks.json");
+  } else {
+    showFileStatus(false);
+  }
+
+  switchSyncTab(State.syncMode || "gist");
+  document.getElementById("modal-settings").classList.add("active");
+}
+function closeSettingsModal() {
+  document.getElementById("modal-settings").classList.remove("active");
+}
+function switchSyncTab(mode) {
+  document.querySelectorAll(".sync-mode-tab").forEach(btn => {
+    const active = btn.dataset.syncMode === mode;
+    btn.style.background = active ? "var(--accent)" : "transparent";
+    btn.style.color = active ? "white" : "var(--muted)";
+  });
+  document.querySelectorAll(".sync-panel").forEach(p => p.classList.add("hidden"));
+  const panel = document.getElementById("sync-panel-" + mode);
+  if (panel) panel.classList.remove("hidden");
+}
+
+function showGistStatus(type, msg) {
+  const el = document.getElementById("gist-status");
+  const colors = {
+    ok: ["var(--done-bg)", "var(--done-fg)"],
+    err: ["var(--pending-bg)", "var(--pending-fg)"],
+    info: ["var(--inprog-bg)", "var(--inprog-fg)"],
+  };
+  const [bg, fg] = colors[type] || colors.info;
+  el.style.background = bg;
+  el.style.color = fg;
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+async function handleGistTest() {
+  const id = document.getElementById("gist-id").value.trim();
+  const token = document.getElementById("gist-token").value.trim();
+  if (!id || !token) { showGistStatus("err", "請填寫 Gist ID 與 Token"); return; }
+  showGistStatus("info", "⟳ 測試連線中…");
+  try {
+    const info = await testGistConnection({ id, token });
+    showGistStatus("ok", `✓ 連線成功 · 檔名：${info.filename} · 任務數：${info.taskCount} · 最後更新：${info.updatedAt}`);
+  } catch (e) {
+    showGistStatus("err", "✗ 連線失敗：" + e.message);
+  }
+}
+
+async function handleGistPull() {
+  const id = document.getElementById("gist-id").value.trim();
+  const token = document.getElementById("gist-token").value.trim();
+  const autoPull = document.getElementById("gist-auto-pull").checked;
+  if (!id || !token) { showGistStatus("err", "請填寫 Gist ID 與 Token"); return; }
+  const cfg = { id, token, autoPull };
+  showGistStatus("info", "⟳ 從 Gist 拉取中…");
+  try {
+    const { data, etag } = await gistGet(cfg);
+    State.tasks = data.tasks || [];
+    State.meta = data.meta || {};
+    State.lastEtag = etag;
+    State.gistConfig = cfg;
+    State.syncMode = "gist";
+    saveGistConfig(cfg);
+    localStorage.setItem(SYNC_MODE_KEY, "gist");
+    try { localStorage.setItem(GIST_ETAG_KEY, etag || ""); } catch (e) {}
+    cacheToLocalStorage();
+    updateSyncChip("gist");
+    refreshAll();
+    showGistStatus("ok", `✓ 已拉取 ${State.tasks.length} 個任務，並設為同步來源`);
+    document.getElementById("setup-banner").classList.add("hidden");
+  } catch (e) {
+    showGistStatus("err", "✗ 拉取失敗：" + e.message);
+  }
+}
+
+async function handleGistPush() {
+  const id = document.getElementById("gist-id").value.trim();
+  const token = document.getElementById("gist-token").value.trim();
+  const autoPull = document.getElementById("gist-auto-pull").checked;
+  if (!id || !token) { showGistStatus("err", "請填寫 Gist ID 與 Token"); return; }
+  if (!confirm("這會用「本機目前的資料」覆蓋雲端 Gist。確定要繼續？")) return;
+  const cfg = { id, token, autoPull };
+  showGistStatus("info", "⟳ 推送到 Gist 中…");
+  try {
+    const { etag } = await gistPut(cfg, buildPayload());
+    State.lastEtag = etag;
+    State.gistConfig = cfg;
+    State.syncMode = "gist";
+    saveGistConfig(cfg);
+    localStorage.setItem(SYNC_MODE_KEY, "gist");
+    try { localStorage.setItem(GIST_ETAG_KEY, etag || ""); } catch (e) {}
+    updateSyncChip("gist");
+    showGistStatus("ok", `✓ 已推送 ${State.tasks.length} 個任務到 Gist，並設為同步來源`);
+    document.getElementById("setup-banner").classList.add("hidden");
+  } catch (e) {
+    showGistStatus("err", "✗ 推送失敗：" + e.message);
+  }
+}
+
+function exportJson() {
+  const payload = buildPayload();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "tasks.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast("已匯出 tasks.json", "success");
+}
+
+function importJson(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data.tasks)) throw new Error("JSON 格式錯誤（缺少 tasks 陣列）");
+      if (!confirm(`即將匯入 ${data.tasks.length} 個任務，這會覆蓋目前的資料。確定？`)) return;
+      State.tasks = data.tasks;
+      State.meta = data.meta || {};
+      cacheToLocalStorage();
+      saveTasks();
+      refreshAll();
+      toast(`已匯入 ${data.tasks.length} 個任務`, "success");
+    } catch (e) {
+      toast("匯入失敗：" + e.message, "error");
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ========================= FILTERS / SORTING ========================= */
+function bucketFor(t) {
+  if (t.status === "已完成") return "done";
+  const dl = daysLeft(t.deadline);
+  if (dl === null) return "later";
+  if (dl < 0) return "overdue";
+  if (dl === 0) return "today";
+  if (dl <= 7) return "week";
+  return "later";
+}
+const BUCKET_META = {
+  overdue: { label: "🚨 逾期",     cls: "urgent" },
+  today:   { label: "🔥 今日到期",  cls: "today" },
+  week:    { label: "本週",         cls: "" },
+  later:   { label: "之後",         cls: "" },
+  done:    { label: "已完成",       cls: "" },
+};
+const BUCKET_ORDER = ["overdue", "today", "week", "later", "done"];
+
+function sortTasks(list, mode) {
+  const cmp = (a, b) => {
+    if (mode === "priority") {
+      if (PRI_ORDER[a.priority] !== PRI_ORDER[b.priority])
+        return PRI_ORDER[a.priority] - PRI_ORDER[b.priority];
+      return (a.deadline || "").localeCompare(b.deadline || "");
+    }
+    if (mode === "created") {
+      return (b.created || "").localeCompare(a.created || "");
+    }
+    const dlA = a.deadline || "9999-12-31";
+    const dlB = b.deadline || "9999-12-31";
+    if (dlA !== dlB) return dlA.localeCompare(dlB);
+    return PRI_ORDER[a.priority] - PRI_ORDER[b.priority];
+  };
+  return list.slice().sort(cmp);
+}
+
+function getFilteredTasks() {
+  const { cat, stat, pri, q, timeFilter } = State.filters;
+  return State.tasks.filter(t => {
+    if (cat && t.category !== cat) return false;
+    if (stat && t.status !== stat) return false;
+    if (pri && t.priority !== pri) return false;
+    if (timeFilter && bucketFor(t) !== timeFilter) return false;
+    if (q) {
+      const hay = [t.id, t.task, t.keyPerson, t.notes, t.category].join(" ").toLowerCase();
+      if (!hay.includes(q.toLowerCase())) return false;
+    }
+    return true;
+  });
+}
+
+function saveFilterState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(State.filters)); } catch (e) {}
+}
+function loadFilterState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    State.filters = { cat: "", stat: "", pri: "", q: "", timeFilter: "", ...s };
+  } catch (e) {}
+}
+
+/* ========================= LIST VIEW ========================= */
+function renderStats(tasks) {
+  const total = tasks.length;
+  const pending = tasks.filter(t => t.status === "待辦").length;
+  const inProgress = tasks.filter(t => t.status === "進行中").length;
+  const done = tasks.filter(t => t.status === "已完成").length;
+  const overdue = tasks.filter(t => t.status !== "已完成" && daysLeft(t.deadline) < 0).length;
+  const dueToday = tasks.filter(t => t.status !== "已完成" && daysLeft(t.deadline) === 0).length;
+  const dueThisWeek = tasks.filter(t => {
+    if (t.status === "已完成") return false;
+    const dl = daysLeft(t.deadline);
+    return dl !== null && dl > 0 && dl <= 7;
+  }).length;
+
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById("progress-fill").style.width = pct + "%";
+  document.getElementById("progress-text").textContent = `${done} / ${total}  ·  ${pct}%`;
+
+  const { stat, timeFilter } = State.filters;
+  const activeStat = timeFilter ? "_" + timeFilter : stat;
+
+  const cards = [
+    { key: "",         cls: "",        label: "總數",       val: total },
+    { key: "待辦",     cls: "info",    label: "待辦",       val: pending },
+    { key: "進行中",   cls: "info",    label: "進行中",     val: inProgress },
+    { key: "已完成",   cls: "success", label: "已完成",     val: done },
+    { key: "_overdue", cls: "alert",   label: "逾期",       val: overdue },
+    { key: "_today",   cls: "warn",    label: "今日到期",   val: dueToday },
+    { key: "_week",    cls: "warn",    label: "7 天內到期", val: dueThisWeek },
+  ];
+
+  document.getElementById("stats").innerHTML = cards.map(c => `
+    <div class="stat ${c.cls}${activeStat === c.key ? ' active' : ''}" data-stat="${c.key}">
+      <div class="stat-label">${c.label}</div>
+      <div class="stat-value">${c.val}</div>
+    </div>
+  `).join("");
+}
+
+function renderTaskCard(t) {
+  const dl = daysLeft(t.deadline);
+  let dlClass = "", dlText = "";
+  if (dl !== null) {
+    if (dl < 0) { dlClass = "overdue"; dlText = `逾期 ${Math.abs(dl)} 天`; }
+    else if (dl === 0) { dlClass = "today"; dlText = "今天到期"; }
+    else if (dl <= 3) { dlClass = "soon"; dlText = `剩 ${dl} 天`; }
+    else { dlText = `剩 ${dl} 天`; }
+  } else { dlText = "無期限"; }
+
+  const isSub = !!t.parentId;
+  const statusClass = STATUS_CLASS[t.status] || "";
+  const doneClass = t.status === "已完成" ? " done" : "";
+  const subClass = isSub ? " sub" : "";
+
+  const resourcesHtml = (t.resources && t.resources.length)
+    ? `<ul>${t.resources.map(r => `<li><span class="res-label">${escapeHtml(r.label)}</span><a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">${escapeHtml(r.url)}</a></li>`).join("")}</ul>`
+    : "";
+
+  const hasDetails = t.keyPerson || (t.resources && t.resources.length) || t.notes || t.parentId || t.est || t.actual;
+
+  return `
+    <article class="task pri-${t.priority}${doneClass}${subClass}" data-task-id="${escapeHtml(t.id)}">
+      <div class="task-head">
+        <span class="task-id">${escapeHtml(t.id)}</span>
+        <span class="task-title">${escapeHtml(t.task)}</span>
+        <span class="badge cat-${t.category}">${t.category}</span>
+        <span class="badge status-badge ${statusClass}" data-action="cycle" data-id="${escapeHtml(t.id)}" title="點擊切換狀態">${t.status}</span>
+        <span class="badge pri-badge ${t.priority}">${t.priority}</span>
+        <button class="task-btn" data-action="toggle-done" data-id="${escapeHtml(t.id)}">
+          ${t.status === "已完成" ? "↺ 重新開啟" : "✓ 完成"}
+        </button>
+      </div>
+      <div class="deadline-wrap">
+        <div class="deadline-date">${t.deadline || "—"}${t.deadline ? " · " + dowLabel(t.deadline) : ""}</div>
+        <div class="days-left ${dlClass}">${dlText}</div>
+        <div class="days-left-label">截止</div>
+      </div>
+      ${hasDetails ? `
+      <div class="task-body">
+        ${t.keyPerson ? `<div><div class="field-label">關鍵人</div><div class="field-value">${escapeHtml(t.keyPerson)}</div></div>` : ""}
+        ${t.parentId ? `<div><div class="field-label">父任務</div><div class="field-value">${escapeHtml(t.parentId)}</div></div>` : ""}
+        ${(t.est || t.actual) ? `<div><div class="field-label">預估 / 實際</div><div class="field-value">${t.est || "—"}h / ${t.actual || "—"}h</div></div>` : ""}
+        ${(t.resources && t.resources.length) ? `<div style="grid-column: 1/-1;"><div class="field-label">相關資料</div><div class="field-value">${resourcesHtml}</div></div>` : ""}
+        ${t.notes ? `<div style="grid-column: 1/-1;"><div class="field-label">備註</div><div class="field-value">${escapeHtml(t.notes)}</div></div>` : ""}
+      </div>` : ""}
+    </article>
+  `;
+}
+
+function renderListView() {
+  const filtered = getFilteredTasks();
+  renderStats(filtered);
+  const list = document.getElementById("list");
+  const sort = document.getElementById("sort-by").value;
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">⌀</div>沒有符合條件的任務</div>`;
+    return;
+  }
+
+  if (sort === "smart") {
+    // 把任務按「專案組」分組：父任務 + 其所有子任務為一組
+    const filteredIds = new Set(filtered.map(t => t.id));
+    const groups = new Map(); // groupId -> { parent, children[] }
+
+    filtered.forEach(t => {
+      // 子任務的父親若不在當前 filtered（被篩掉）則以自己為 group
+      const groupId = (t.parentId && filteredIds.has(t.parentId)) ? t.parentId : t.id;
+      if (!groups.has(groupId)) groups.set(groupId, { parent: null, children: [] });
+      const g = groups.get(groupId);
+      if (t.id === groupId) g.parent = t;
+      else g.children.push(t);
+    });
+
+    // 每組的 bucket：取組內「最嚴重」的那個（逾期 > 今日 > 本週 > 之後 > 已完成）
+    const bucketOfGroup = g => {
+      const all = [g.parent, ...g.children].filter(Boolean);
+      const active = all.filter(t => t.status !== "已完成");
+      if (active.length === 0) return "done";
+      const bs = new Set(active.map(bucketFor));
+      return BUCKET_ORDER.find(b => b !== "done" && bs.has(b)) || "later";
+    };
+    // 每組的排序鍵：組內最早的截止日
+    const earliestDeadline = g => {
+      const all = [g.parent, ...g.children].filter(Boolean);
+      return all.map(t => t.deadline || "9999-12-31").sort()[0];
+    };
+    const childSortKey = c => (c.deadline || "9999-12-31") + c.id;
+
+    const bucketGroups = {};
+    BUCKET_ORDER.forEach(k => bucketGroups[k] = []);
+    groups.forEach(g => bucketGroups[bucketOfGroup(g)].push(g));
+    Object.keys(bucketGroups).forEach(k => {
+      bucketGroups[k].sort((a, b) => earliestDeadline(a).localeCompare(earliestDeadline(b)));
+    });
+
+    list.innerHTML = BUCKET_ORDER
+      .filter(k => bucketGroups[k].length)
+      .map(k => {
+        const meta = BUCKET_META[k];
+        const taskCount = bucketGroups[k].reduce(
+          (s, g) => s + (g.parent ? 1 : 0) + g.children.length, 0
+        );
+        const body = bucketGroups[k].map(g => {
+          let html = "";
+          if (g.parent) html += renderTaskCard(g.parent);
+          const sortedChildren = g.children.slice().sort((a, b) =>
+            childSortKey(a).localeCompare(childSortKey(b))
+          );
+          html += sortedChildren.map(renderTaskCard).join("");
+          return html;
+        }).join("");
+        return `
+          <section class="group">
+            <div class="group-header">
+              <div class="group-title ${meta.cls}">${meta.label}</div>
+              <div class="group-count">${taskCount}</div>
+              <div class="group-line"></div>
+            </div>
+            <div class="group-list">${body}</div>
+          </section>
+        `;
+      }).join("");
+  } else {
+    const sorted = sortTasks(filtered, sort);
+    list.innerHTML = `<div class="group-list">${sorted.map(renderTaskCard).join("")}</div>`;
+  }
+}
+
+/* ========================= CALENDAR VIEW ========================= */
+function renderCalendarView() {
+  const d = State.calDate;
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  document.getElementById("cal-title").textContent = `${year} 年 ${month + 1} 月`;
+
+  const first = new Date(year, month, 1);
+  const firstDow = first.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const cells = [];
+  // leading days (prev month)
+  for (let i = firstDow; i > 0; i--) {
+    const pd = new Date(year, month, 1 - i);
+    cells.push({ date: pd, otherMonth: true });
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    cells.push({ date: new Date(year, month, i), otherMonth: false });
+  }
+  // trailing to complete weeks (6 rows = 42 cells for consistency)
+  while (cells.length % 7 !== 0 || cells.length < 42) {
+    const lastDate = cells[cells.length - 1].date;
+    const nd = new Date(lastDate);
+    nd.setDate(nd.getDate() + 1);
+    cells.push({ date: nd, otherMonth: nd.getMonth() !== month });
+    if (cells.length >= 42) break;
+  }
+
+  const todayStr = ymd(today());
+  const tasksByDate = {};
+  State.tasks.forEach(t => {
+    if (!t.deadline) return;
+    if (!tasksByDate[t.deadline]) tasksByDate[t.deadline] = [];
+    tasksByDate[t.deadline].push(t);
+  });
+
+  const dows = ["日","一","二","三","四","五","六"];
+  let html = dows.map((d, i) => `<div class="cal-dow${i === 0 || i === 6 ? ' weekend' : ''}">${d}</div>`).join("");
+
+  html += cells.map(cell => {
+    const dstr = ymd(cell.date);
+    const dow = cell.date.getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const isToday = dstr === todayStr;
+    const ts = tasksByDate[dstr] || [];
+    const visible = ts.slice(0, 3);
+    const extra = ts.length - visible.length;
+    const classes = [
+      "cal-cell",
+      cell.otherMonth ? "other-month" : "",
+      isToday ? "today" : "",
+      isWeekend ? "weekend" : "",
+    ].filter(Boolean).join(" ");
+
+    return `
+      <div class="${classes}" data-cal-date="${dstr}">
+        <div class="cal-date">${cell.date.getDate()}</div>
+        ${visible.map(t => `
+          <div class="cal-task pri-${t.priority}${t.status === '已完成' ? ' done' : ''}" data-task-id="${escapeHtml(t.id)}" title="${escapeHtml(t.task)}">
+            ${escapeHtml(t.task)}
+          </div>
+        `).join("")}
+        ${extra > 0 ? `<div class="cal-more">+ ${extra} 個任務</div>` : ""}
+      </div>
+    `;
+  }).join("");
+
+  document.getElementById("cal-grid").innerHTML = html;
+}
+
+/* ========================= DASHBOARD VIEW ========================= */
+function svgDonut(segments, size = 160, ringWidth = 22) {
+  // segments: [{value, color}]
+  const total = segments.reduce((s, x) => s + x.value, 0);
+  const r = (size - ringWidth) / 2;
+  const cx = size / 2, cy = size / 2;
+  const circ = 2 * Math.PI * r;
+
+  if (total === 0) {
+    return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${ringWidth}"/>`;
+  }
+  let offset = 0;
+  const parts = segments.map(seg => {
+    const frac = seg.value / total;
+    const len = circ * frac;
+    const circle = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+      stroke="${seg.color}" stroke-width="${ringWidth}"
+      stroke-dasharray="${len} ${circ - len}"
+      stroke-dashoffset="${-offset}"
+      transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += len;
+    return circle;
+  });
+  return parts.join("");
+}
+
+function renderDashboard() {
+  const tasks = State.tasks;
+  const total = tasks.length;
+  const done = tasks.filter(t => t.status === "已完成").length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  // Progress donut
+  document.getElementById("dash-donut-progress").innerHTML = svgDonut([
+    { value: done, color: "#10b981" },
+    { value: total - done, color: "var(--border)" },
+  ]);
+  document.getElementById("dash-progress-pct").textContent = pct + "%";
+  document.getElementById("dash-progress-txt").textContent = `${done} / ${total}`;
+  document.getElementById("dash-total-sub").textContent = `共 ${total} 個任務`;
+
+  // Category donut
+  const catCounts = {};
+  Object.keys(CAT_COLORS).forEach(c => catCounts[c] = 0);
+  tasks.forEach(t => { catCounts[t.category] = (catCounts[t.category] || 0) + 1; });
+  const catSegs = Object.keys(CAT_COLORS)
+    .filter(c => catCounts[c] > 0)
+    .map(c => ({ value: catCounts[c], color: CAT_COLORS[c], label: c }));
+  document.getElementById("dash-donut-category").innerHTML = svgDonut(catSegs);
+  document.getElementById("dash-cat-total").textContent = total;
+  document.getElementById("dash-cat-legend").innerHTML = catSegs.map(s => `
+    <div class="legend-row">
+      <span class="legend-dot" style="background:${s.color}"></span>
+      <span class="legend-label">${s.label}</span>
+      <span class="legend-val">${s.value}</span>
+    </div>
+  `).join("") || '<div class="legend-row" style="color:var(--muted)">— 無資料 —</div>';
+
+  // Priority bar chart
+  renderBarChart("dash-priority-chart", ["MAX", "High", "Medium", "Low"], tasks, "priority", PRI_COLORS);
+
+  // Status bar chart
+  renderBarChart("dash-status-chart", ["待辦", "進行中", "已完成"], tasks, "status", STATUS_COLORS);
+
+  // Workload (7 days)
+  renderWorkload();
+
+  // Keyperson chart
+  const kpCounts = {};
+  tasks.forEach(t => {
+    if (t.status === "已完成") return;
+    const kp = (t.keyPerson || "").trim() || "—（無）";
+    kp.split(/[,，、]/).map(s => s.trim()).filter(Boolean).forEach(k => {
+      kpCounts[k] = (kpCounts[k] || 0) + 1;
+    });
+  });
+  const kpSorted = Object.entries(kpCounts).sort((a, b) => b[1] - a[1]);
+  const kpMax = Math.max(1, ...kpSorted.map(([, v]) => v));
+  document.getElementById("dash-keyperson-chart").innerHTML = kpSorted.length ? kpSorted.map(([k, v]) => `
+    <div class="bar-row">
+      <div class="bar-label" title="${escapeHtml(k)}">${escapeHtml(k)}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(v / kpMax) * 100}%; background: var(--accent)"></div>
+      </div>
+      <div class="bar-val">${v}</div>
+    </div>
+  `).join("") : '<div style="color:var(--muted); font-size:13px;">— 無進行中任務 —</div>';
+}
+
+function renderBarChart(elId, keys, tasks, field, colors) {
+  const counts = {};
+  keys.forEach(k => counts[k] = 0);
+  tasks.forEach(t => { counts[t[field]] = (counts[t[field]] || 0) + 1; });
+  const max = Math.max(1, ...Object.values(counts));
+  document.getElementById(elId).innerHTML = keys.map(k => {
+    const v = counts[k] || 0;
+    const w = (v / max) * 100;
+    return `
+      <div class="bar-row">
+        <div class="bar-label">${escapeHtml(k)}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${w}%; background:${colors[k]}">${v > 0 && w > 15 ? v : ''}</div>
+        </div>
+        <div class="bar-val">${v}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderWorkload() {
+  const t0 = today();
+  const todayStr = ymd(t0);
+  const byDate = {};
+  State.tasks.forEach(t => {
+    if (t.status === "已完成") return;
+    if (!t.deadline) return;
+    byDate[t.deadline] = (byDate[t.deadline] || 0) + 1;
+  });
+  const max = Math.max(1, ...Object.values(byDate));
+  let html = "";
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(t0);
+    d.setDate(d.getDate() + i);
+    const ds = ymd(d);
+    const cnt = byDate[ds] || 0;
+    const dow = ["日","一","二","三","四","五","六"][d.getDay()];
+    const isToday = ds === todayStr;
+    html += `
+      <div class="workload-day${isToday ? ' today' : ''}" data-cal-date="${ds}">
+        <div class="workload-dow">${dow}</div>
+        <div class="workload-date">${d.getDate()}</div>
+        <div class="workload-count">${cnt > 0 ? cnt + " 個" : ""}</div>
+        <div class="workload-bar">
+          <div class="workload-bar-fill" style="width:${(cnt / max) * 100}%"></div>
+        </div>
+      </div>
+    `;
+  }
+  document.getElementById("dash-workload").innerHTML = html;
+}
+
+/* ========================= GANTT VIEW ========================= */
+function renderGanttView() {
+  const tasks = State.tasks.filter(t => t.created && t.deadline).slice();
+  tasks.sort((a, b) => (a.created || "").localeCompare(b.created || ""));
+
+  if (tasks.length === 0) {
+    document.getElementById("gantt-container").innerHTML = `<div class="empty">無可顯示任務（需要建立日與截止日）</div>`;
+    return;
+  }
+
+  // Determine date range
+  const minDate = tasks.reduce((m, t) => t.created < m ? t.created : m, tasks[0].created);
+  const maxDate = tasks.reduce((m, t) => t.deadline > m ? t.deadline : m, tasks[0].deadline);
+  const start = parseDate(minDate);
+  const end = parseDate(maxDate);
+  const totalDays = Math.max(1, daysBetween(minDate, maxDate) + 1);
+  const zoom = State.ganttZoom; // px per day
+  const chartWidth = totalDays * zoom;
+  const labelWidth = 200;
+  const todayStr = ymd(today());
+
+  // Build month header
+  const months = [];
+  let cur = new Date(start);
+  cur.setDate(1);
+  while (cur <= end) {
+    const mStart = new Date(cur);
+    const mEnd = new Date(cur.getFullYear(), cur.getMonth() + 1, 0);
+    const clampedStart = mStart < start ? start : mStart;
+    const clampedEnd = mEnd > end ? end : mEnd;
+    const offset = daysBetween(minDate, ymd(clampedStart));
+    const w = (daysBetween(ymd(clampedStart), ymd(clampedEnd)) + 1) * zoom;
+    months.push({
+      label: `${cur.getFullYear()}/${String(cur.getMonth() + 1).padStart(2, '0')}`,
+      left: offset * zoom,
+      width: w,
+    });
+    cur.setMonth(cur.getMonth() + 1);
+  }
+
+  // Today line position
+  const tDiff = daysBetween(minDate, todayStr);
+  const todayLeft = tDiff * zoom + zoom / 2;
+  const showTodayLine = tDiff >= 0 && tDiff < totalDays;
+
+  const rowTemplate = `grid-template-columns: ${labelWidth}px ${chartWidth}px;`;
+
+  let html = `<div class="gantt-grid" style="min-width: ${labelWidth + chartWidth}px;">`;
+  // Header row
+  html += `<div class="gantt-row header" style="${rowTemplate}">
+    <div class="gantt-label"><strong>任務</strong></div>
+    <div style="position:relative; height:28px;">
+      ${months.map(m => `<div class="gantt-month-cell" style="position:absolute; left:${m.left}px; width:${m.width}px;">${m.label}</div>`).join("")}
+    </div>
+  </div>`;
+
+  // Task rows
+  tasks.forEach(t => {
+    const left = daysBetween(minDate, t.created) * zoom;
+    const width = Math.max(zoom * 0.5, (daysBetween(t.created, t.deadline) + 1) * zoom);
+    const color = PRI_COLORS[t.priority] || "#6b7280";
+    const doneCls = t.status === "已完成" ? " done" : "";
+    html += `
+      <div class="gantt-row" style="${rowTemplate}">
+        <div class="gantt-label" title="${escapeHtml(t.task)}">
+          <span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:${CAT_COLORS[t.category]}; margin-right:6px;"></span>
+          ${escapeHtml(t.id)} · ${escapeHtml(t.task)}
+        </div>
+        <div class="gantt-track" style="position:relative;">
+          ${showTodayLine ? `<div class="gantt-today-line" style="left:${todayLeft}px;"></div>` : ""}
+          <div class="gantt-bar${doneCls}" style="left:${left}px; width:${width}px; background:${color};" data-task-id="${escapeHtml(t.id)}" title="${escapeHtml(t.task)} · ${t.created} → ${t.deadline}">
+            ${escapeHtml(t.task)}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+  document.getElementById("gantt-container").innerHTML = html;
+}
+
+/* ========================= VIEW SWITCHING ========================= */
+function switchView(v) {
+  State.currentView = v;
+  try { localStorage.setItem(VIEW_KEY, v); } catch (e) {}
+  document.querySelectorAll(".view-tab").forEach(b => {
+    b.classList.toggle("active", b.dataset.view === v);
+  });
+  document.querySelectorAll(".view").forEach(el => {
+    el.classList.toggle("hidden", el.id !== "view-" + v);
+  });
+  renderCurrentView();
+}
+
+function renderCurrentView() {
+  const v = State.currentView;
+  if (v === "list") renderListView();
+  else if (v === "calendar") renderCalendarView();
+  else if (v === "dashboard") renderDashboard();
+  else if (v === "gantt") renderGanttView();
+}
+
+function refreshAll() {
+  renderCurrentView();
+}
+
+/* ========================= TASK CRUD ========================= */
+function openTaskEditor(id = null) {
+  State.editingId = id;
+  const t = id ? State.tasks.find(x => x.id === id) : null;
+  document.getElementById("modal-title").textContent = t ? "編輯任務" : "新增任務";
+  document.getElementById("modal-delete").classList.toggle("hidden", !t);
+
+  document.getElementById("f-task").value = t?.task || "";
+  document.getElementById("f-id").value = t?.id || "";
+  document.getElementById("f-id").readOnly = !!t;
+  document.getElementById("f-category").value = t?.category || "MISC";
+  document.getElementById("f-status").value = t?.status || "待辦";
+  document.getElementById("f-priority").value = t?.priority || "Medium";
+  document.getElementById("f-created").value = t?.created || ymd(new Date());
+  document.getElementById("f-deadline").value = t?.deadline || "";
+  document.getElementById("f-est").value = t?.est ?? "";
+  document.getElementById("f-actual").value = t?.actual ?? "";
+  document.getElementById("f-keyperson").value = t?.keyPerson || "";
+  document.getElementById("f-parent").value = t?.parentId || "";
+  document.getElementById("f-notes").value = t?.notes || "";
+
+  renderResourceEditor(t?.resources || []);
+  document.getElementById("modal-task").classList.add("active");
+  setTimeout(() => document.getElementById("f-task").focus(), 50);
+}
+
+function renderResourceEditor(resources) {
+  const container = document.getElementById("f-resources-list");
+  container.innerHTML = resources.map((r, i) => `
+    <div class="resource-row" data-idx="${i}">
+      <input type="text" class="res-label-input" value="${escapeHtml(r.label)}" placeholder="標籤">
+      <input type="url" class="res-url-input" value="${escapeHtml(r.url)}" placeholder="https://…">
+      <button type="button" class="remove-res" data-action="remove-res" data-idx="${i}">×</button>
+    </div>
+  `).join("");
+}
+
+function collectResources() {
+  return [...document.querySelectorAll("#f-resources-list .resource-row")].map(row => ({
+    label: row.querySelector(".res-label-input").value.trim(),
+    url: row.querySelector(".res-url-input").value.trim(),
+  })).filter(r => r.label || r.url);
+}
+
+function closeTaskEditor() {
+  document.getElementById("modal-task").classList.remove("active");
+  State.editingId = null;
+}
+
+function generateId(category) {
+  const prefix = category;
+  const existing = State.tasks
+    .map(t => t.id)
+    .filter(id => id.startsWith(prefix) && /^[A-Z]+\d{3}$/.test(id))
+    .map(id => parseInt(id.slice(prefix.length), 10))
+    .filter(n => !isNaN(n));
+  const next = existing.length ? Math.max(...existing) + 1 : 1;
+  return `${prefix}${String(next).padStart(3, "0")}`;
+}
+
+async function saveTaskFromForm() {
+  const taskDesc = document.getElementById("f-task").value.trim();
+  if (!taskDesc) { toast("請輸入任務描述", "error"); return; }
+
+  const category = document.getElementById("f-category").value;
+  let id = document.getElementById("f-id").value.trim();
+  if (!id) id = generateId(category);
+
+  if (!State.editingId && State.tasks.some(t => t.id === id)) {
+    toast("ID 已存在：" + id, "error");
+    return;
+  }
+
+  const payload = {
+    id,
+    task: taskDesc,
+    category,
+    status: document.getElementById("f-status").value,
+    priority: document.getElementById("f-priority").value,
+    created: document.getElementById("f-created").value || ymd(new Date()),
+    deadline: document.getElementById("f-deadline").value || null,
+    est: parseFloat(document.getElementById("f-est").value) || null,
+    actual: parseFloat(document.getElementById("f-actual").value) || null,
+    keyPerson: document.getElementById("f-keyperson").value.trim(),
+    parentId: document.getElementById("f-parent").value.trim(),
+    notes: document.getElementById("f-notes").value.trim(),
+    resources: collectResources(),
+  };
+
+  if (State.editingId) {
+    const idx = State.tasks.findIndex(t => t.id === State.editingId);
+    if (idx >= 0) State.tasks[idx] = payload;
+    toast("已更新：" + payload.id, "success");
+  } else {
+    State.tasks.push(payload);
+    toast("已新增：" + payload.id, "success");
+  }
+
+  await saveTasks();
+  closeTaskEditor();
+  refreshAll();
+}
+
+async function deleteCurrentTask() {
+  if (!State.editingId) return;
+  if (!confirm(`確定要刪除 ${State.editingId}？`)) return;
+  State.tasks = State.tasks.filter(t => t.id !== State.editingId);
+  await saveTasks();
+  closeTaskEditor();
+  refreshAll();
+  toast("已刪除", "info");
+}
+
+async function cycleStatus(id) {
+  const t = State.tasks.find(x => x.id === id);
+  if (!t) return;
+  t.status = STATUS_CYCLE[t.status] || "待辦";
+  await saveTasks();
+  refreshAll();
+}
+
+async function toggleDone(id) {
+  const t = State.tasks.find(x => x.id === id);
+  if (!t) return;
+  t.status = t.status === "已完成" ? "待辦" : "已完成";
+  await saveTasks();
+  refreshAll();
+}
+
+/* ========================= NOTIFICATIONS ========================= */
+async function enableNotifications() {
+  if (!("Notification" in window)) {
+    toast("此瀏覽器不支援通知", "error");
+    return false;
+  }
+  if (Notification.permission === "granted") return true;
+  if (Notification.permission === "denied") {
+    toast("通知已被封鎖，請從瀏覽器設定開啟", "error");
+    return false;
+  }
+  const p = await Notification.requestPermission();
+  return p === "granted";
+}
+
+function checkAndNotify() {
+  if (localStorage.getItem(NOTIFY_KEY) !== "on") return;
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+  const todayStr = ymd(today());
+  let shown = {};
+  try { shown = JSON.parse(localStorage.getItem(NOTIFY_SHOWN_KEY) || "{}"); } catch (e) {}
+  // reset daily
+  if (shown._date !== todayStr) shown = { _date: todayStr };
+
+  const overdueTasks = State.tasks.filter(t => t.status !== "已完成" && daysLeft(t.deadline) < 0);
+  const todayTasks = State.tasks.filter(t => t.status !== "已完成" && daysLeft(t.deadline) === 0);
+
+  if (overdueTasks.length && !shown.overdue) {
+    new Notification("🚨 逾期任務提醒", {
+      body: `你有 ${overdueTasks.length} 個逾期任務：${overdueTasks.slice(0, 3).map(t => t.task).join("、")}${overdueTasks.length > 3 ? "…" : ""}`,
+      icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚠️%3C/text%3E%3C/svg%3E",
+    });
+    shown.overdue = true;
+  }
+  if (todayTasks.length && !shown.today) {
+    new Notification("🔥 今日到期", {
+      body: `今天有 ${todayTasks.length} 個任務：${todayTasks.map(t => t.task).join("、")}`,
+      icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🔥%3C/text%3E%3C/svg%3E",
+    });
+    shown.today = true;
+  }
+
+  try { localStorage.setItem(NOTIFY_SHOWN_KEY, JSON.stringify(shown)); } catch (e) {}
+}
+
+function updateNotifyButton() {
+  const btn = document.getElementById("notify-btn");
+  const on = localStorage.getItem(NOTIFY_KEY) === "on";
+  btn.textContent = on ? "🔔 開" : "🔕 關";
+  btn.title = on ? "通知已開啟（點擊關閉）" : "通知已關閉（點擊開啟）";
+}
+
+async function toggleNotifications() {
+  const on = localStorage.getItem(NOTIFY_KEY) === "on";
+  if (on) {
+    localStorage.setItem(NOTIFY_KEY, "off");
+    updateNotifyButton();
+    toast("通知已關閉", "info");
+  } else {
+    const ok = await enableNotifications();
+    if (ok) {
+      localStorage.setItem(NOTIFY_KEY, "on");
+      updateNotifyButton();
+      toast("通知已開啟 — 將在逾期/今日到期時提醒", "success");
+      checkAndNotify();
+    }
+  }
+}
+
+/* ========================= THEME ========================= */
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  const btn = document.getElementById("theme-toggle");
+  if (btn) btn.textContent = theme === "dark" ? "☀ 淺色" : "◐ 深色";
+  document.querySelector('meta[name="theme-color"]').content = theme === "dark" ? "#0f172a" : "#1f4e78";
+}
+
+/* ========================= INIT ========================= */
+function updateTodayLabel() {
+  const now = new Date();
+  const dow = ["週日","週一","週二","週三","週四","週五","週六"][now.getDay()];
+  document.getElementById("today-label").textContent =
+    `今天：${ymd(now)} ${dow}`;
+}
+
+function scheduleMidnightRefresh() {
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+  setTimeout(() => {
+    updateTodayLabel();
+    refreshAll();
+    checkAndNotify();
+    scheduleMidnightRefresh();
+  }, tomorrow - now);
+}
+
+function bindEvents() {
+  // View tabs
+  document.querySelectorAll(".view-tab").forEach(btn => {
+    btn.addEventListener("click", () => switchView(btn.dataset.view));
+  });
+
+  // Filters
+  ["filter-category", "filter-status", "filter-priority"].forEach(id => {
+    document.getElementById(id).addEventListener("change", e => {
+      const key = id.replace("filter-", "").replace("category", "cat").replace("status", "stat").replace("priority", "pri");
+      State.filters[key] = e.target.value;
+      saveFilterState();
+      renderCurrentView();
+    });
+  });
+  document.getElementById("sort-by").addEventListener("change", renderCurrentView);
+  document.getElementById("search").addEventListener("input", e => {
+    State.filters.q = e.target.value;
+    saveFilterState();
+    renderCurrentView();
+  });
+  document.getElementById("reset").addEventListener("click", () => {
+    State.filters = { cat: "", stat: "", pri: "", q: "", timeFilter: "" };
+    document.getElementById("filter-category").value = "";
+    document.getElementById("filter-status").value = "";
+    document.getElementById("filter-priority").value = "";
+    document.getElementById("sort-by").value = "smart";
+    document.getElementById("search").value = "";
+    saveFilterState();
+    renderCurrentView();
+  });
+
+  // Stats click filter
+  document.getElementById("stats").addEventListener("click", e => {
+    const card = e.target.closest("[data-stat]");
+    if (!card) return;
+    const key = card.getAttribute("data-stat");
+    const wasActive = card.classList.contains("active");
+    if (key === "") {
+      State.filters.stat = ""; State.filters.timeFilter = "";
+    } else if (key.startsWith("_")) {
+      State.filters.stat = "";
+      State.filters.timeFilter = wasActive ? "" : key.slice(1);
+    } else {
+      State.filters.timeFilter = "";
+      State.filters.stat = wasActive ? "" : key;
+    }
+    document.getElementById("filter-status").value = State.filters.stat;
+    saveFilterState();
+    renderCurrentView();
+  });
+
+  // Task click (edit) + actions
+  document.getElementById("list").addEventListener("click", e => {
+    const actionEl = e.target.closest("[data-action]");
+    if (actionEl) {
+      e.stopPropagation();
+      const action = actionEl.getAttribute("data-action");
+      const id = actionEl.getAttribute("data-id");
+      if (action === "cycle") cycleStatus(id);
+      else if (action === "toggle-done") toggleDone(id);
+      return;
+    }
+    const taskEl = e.target.closest("[data-task-id]");
+    if (taskEl) openTaskEditor(taskEl.getAttribute("data-task-id"));
+  });
+
+  // Calendar events
+  document.getElementById("cal-prev").addEventListener("click", () => {
+    State.calDate = new Date(State.calDate.getFullYear(), State.calDate.getMonth() - 1, 1);
+    renderCalendarView();
+  });
+  document.getElementById("cal-next").addEventListener("click", () => {
+    State.calDate = new Date(State.calDate.getFullYear(), State.calDate.getMonth() + 1, 1);
+    renderCalendarView();
+  });
+  document.getElementById("cal-today").addEventListener("click", () => {
+    State.calDate = new Date();
+    renderCalendarView();
+  });
+  document.getElementById("cal-grid").addEventListener("click", e => {
+    const taskEl = e.target.closest("[data-task-id]");
+    if (taskEl) {
+      e.stopPropagation();
+      openTaskEditor(taskEl.getAttribute("data-task-id"));
+      return;
+    }
+    const cellEl = e.target.closest("[data-cal-date]");
+    if (cellEl) {
+      const d = cellEl.getAttribute("data-cal-date");
+      openTaskEditor(null);
+      document.getElementById("f-deadline").value = d;
+    }
+  });
+
+  // Gantt events
+  document.getElementById("gantt-container").addEventListener("click", e => {
+    const barEl = e.target.closest("[data-task-id]");
+    if (barEl) openTaskEditor(barEl.getAttribute("data-task-id"));
+  });
+  document.getElementById("gantt-zoom-in").addEventListener("click", () => {
+    State.ganttZoom = Math.min(60, State.ganttZoom + 8);
+    renderGanttView();
+  });
+  document.getElementById("gantt-zoom-out").addEventListener("click", () => {
+    State.ganttZoom = Math.max(8, State.ganttZoom - 8);
+    renderGanttView();
+  });
+
+  // Dashboard workload click
+  document.getElementById("dash-workload").addEventListener("click", e => {
+    const cell = e.target.closest("[data-cal-date]");
+    if (cell) {
+      switchView("calendar");
+      const d = parseDate(cell.getAttribute("data-cal-date"));
+      if (d) { State.calDate = d; renderCalendarView(); }
+    }
+  });
+
+  // FAB + modal
+  document.getElementById("fab-add").addEventListener("click", () => openTaskEditor());
+  document.getElementById("modal-close").addEventListener("click", closeTaskEditor);
+  document.getElementById("modal-cancel").addEventListener("click", closeTaskEditor);
+  document.getElementById("modal-save").addEventListener("click", saveTaskFromForm);
+  document.getElementById("modal-delete").addEventListener("click", deleteCurrentTask);
+  document.getElementById("modal-task").addEventListener("click", e => {
+    if (e.target.id === "modal-task") closeTaskEditor();
+  });
+  document.getElementById("f-add-res").addEventListener("click", () => {
+    const current = collectResources();
+    current.push({ label: "", url: "" });
+    renderResourceEditor(current);
+  });
+  document.getElementById("f-resources-list").addEventListener("click", e => {
+    if (e.target.matches("[data-action='remove-res']")) {
+      const idx = parseInt(e.target.dataset.idx, 10);
+      const current = collectResources();
+      current.splice(idx, 1);
+      renderResourceEditor(current);
+    }
+  });
+  document.getElementById("f-category").addEventListener("change", e => {
+    // auto-update suggested ID if creating new
+    if (!State.editingId && !document.getElementById("f-id").value.trim()) {
+      // leave blank — will auto-generate on save
+    }
+  });
+
+  // Settings modal
+  document.getElementById("settings-btn").addEventListener("click", openSettingsModal);
+  document.getElementById("open-settings-banner").addEventListener("click", openSettingsModal);
+  document.querySelectorAll("[data-close-settings]").forEach(b =>
+    b.addEventListener("click", closeSettingsModal)
+  );
+  document.getElementById("modal-settings").addEventListener("click", e => {
+    if (e.target.id === "modal-settings") closeSettingsModal();
+  });
+  document.querySelectorAll(".sync-mode-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      switchSyncTab(btn.dataset.syncMode);
+      // Tab 切換只是 UI 顯示，不會自動切換實際同步模式；必須在面板內按「連結」「推送」才切換
+    });
+  });
+  document.getElementById("gist-test-btn").addEventListener("click", handleGistTest);
+  document.getElementById("gist-pull-btn").addEventListener("click", handleGistPull);
+  document.getElementById("gist-push-btn").addEventListener("click", handleGistPush);
+
+  // File sync
+  document.getElementById("connect-file-btn").addEventListener("click", connectFile);
+  document.getElementById("disconnect-file-btn").addEventListener("click", disconnectFile);
+
+  // Local import/export
+  document.getElementById("export-json-btn").addEventListener("click", exportJson);
+  document.getElementById("import-json-btn").addEventListener("click", () =>
+    document.getElementById("import-json-file").click()
+  );
+  document.getElementById("import-json-file").addEventListener("change", e => {
+    const f = e.target.files && e.target.files[0];
+    if (f) importJson(f);
+    e.target.value = "";
+  });
+
+  // Banner
+  document.getElementById("dismiss-setup-btn").addEventListener("click", () => {
+    localStorage.setItem(DISMISS_SETUP_KEY, "1");
+    document.getElementById("setup-banner").classList.add("hidden");
+  });
+  document.getElementById("reload-btn").addEventListener("click", reloadFromSource);
+
+  // Theme + notify
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+    renderCurrentView();
+  });
+  document.getElementById("notify-btn").addEventListener("click", toggleNotifications);
+
+  // Keyboard shortcuts
+  document.addEventListener("keydown", e => {
+    const target = e.target;
+    const isInput = ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName);
+    if (e.key === "Escape") {
+      if (document.getElementById("modal-settings").classList.contains("active")) {
+        closeSettingsModal(); e.preventDefault(); return;
+      }
+      if (document.getElementById("modal-task").classList.contains("active")) {
+        closeTaskEditor(); e.preventDefault(); return;
+      }
+      if (target.id === "search") target.blur();
+      if (!isInput) document.getElementById("reset").click();
+    } else if (e.key === "/" && !isInput) {
+      e.preventDefault();
+      if (State.currentView !== "list") switchView("list");
+      setTimeout(() => document.getElementById("search").focus(), 50);
+    } else if ((e.key === "n" || e.key === "N") && !isInput && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      openTaskEditor();
+    }
+  });
+
+  // Auto re-pull from Gist when tab becomes visible again
+  document.addEventListener("visibilitychange", async () => {
+    if (document.hidden) return;
+    if (State.syncMode !== "gist" || !State.gistConfig) return;
+    if (State.gistConfig.autoPull === false) return;
+    try {
+      const { data, etag } = await gistGet(State.gistConfig);
+      if (etag && etag !== State.lastEtag) {
+        State.tasks = data.tasks || [];
+        State.meta = data.meta || {};
+        State.lastEtag = etag;
+        cacheToLocalStorage();
+        refreshAll();
+        updateSyncChip("gist");
+        toast("🔄 已從 Gist 拉取最新資料", "info");
+      }
+    } catch (e) { /* silent */ }
+  });
+}
+
+async function init() {
+  loadFilterState();
+
+  // Theme
+  const savedTheme = localStorage.getItem(THEME_KEY)
+    || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  applyTheme(savedTheme);
+
+  // View
+  const savedView = localStorage.getItem(VIEW_KEY) || "list";
+
+  // Restore filter inputs
+  document.getElementById("filter-category").value = State.filters.cat || "";
+  document.getElementById("filter-status").value = State.filters.stat || "";
+  document.getElementById("filter-priority").value = State.filters.pri || "";
+  document.getElementById("search").value = State.filters.q || "";
+
+  updateTodayLabel();
+  updateNotifyButton();
+
+  // Load data
+  await loadTasks();
+
+  // Bind everything
+  bindEvents();
+
+  // Initial view
+  switchView(savedView);
+
+  // Midnight refresh + notifications
+  scheduleMidnightRefresh();
+  checkAndNotify();
+
+  // PWA
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+}
+
+init();
+</script>
+</body>
+</html>

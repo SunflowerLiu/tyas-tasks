@@ -1,0 +1,21 @@
+{
+  "name": "任務監控 — TYAS",
+  "short_name": "任務監控",
+  "description": "Sun 在桃園美國學校（TYAS）的任務追蹤與監控系統，支援清單 / 行事曆 / 儀表板 / 甘特圖視圖，並可透過 GitHub Gist 跨裝置同步。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3f4f7",
+  "theme_color": "#1f4e78",
+  "lang": "zh-Hant",
+  "dir": "ltr",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "新增任務", "short_name": "新增", "url": "./index.html?action=new", "icons": [{ "src": "icon.svg", "sizes": "any" }] },
+    { "name": "今日待辦", "short_name": "今日", "url": "./index.html?filter=today", "icons": [{ "src": "icon.svg", "sizes": "any" }] }
+  ]
+}
